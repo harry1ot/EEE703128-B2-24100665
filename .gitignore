@@ -22,7 +22,7 @@ Thumbs.db:encryptable
 ehthumbs.db
 Desktop.ini
 
-# VS Code / Cursor
+# VS Code
 .vscode/
 !.vscode/extensions.json
 *.log

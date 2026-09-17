@@ -1,105 +1,101 @@
-# Kho mẫu B2 — EEE703128
+# EEE703128 — Bài kiểm tra số 2: <Tên Bộ điều khiển bốn LED 7 đoạn theo phương pháp quét đa hợp / J04>
 
-> ⚠️ **ĐÂY LÀ GÓI FILE OVERLAY/THAM CHIẾU, KHÔNG PHẢI MỘT REPOSITORY CI HOÀN CHỈNH.**
-> Sinh viên phải tạo repo bằng **Use this template** từ kho GitHub chính thức do giảng viên phát trên LMS. Hạ tầng `.github/workflows/` nằm ở kho chính thức. Nếu tab **Actions** trống, báo mentor; không tự cài Docker để chữa repo thiếu workflow.
+## 📌 Thông tin dự án
 
-
-Kho này là điểm xuất phát cho **Bài kiểm tra số 2**: chọn một đề trong 80 đề, viết Verilog, cho
-chạy qua chuỗi RTL-to-GDSII, rồi viết báo cáo giải thích kết quả.
-
-> **Bắt đầu:** bấm **Use this template → Create a new repository**, đặt tên `eee703128-b2-<MSSV>`.
-> Đừng bấm *Fork* — fork làm rối lịch sử commit, mà lịch sử commit là bằng chứng em tự làm.
+- **Tên đề tài:** `Bộ điều khiển bốn LED 7 đoạn theo phương pháp quét đa hợp`
+- **Mã đề tài:** `J04`
+- **Sinh viên thực hiện:** `Phạm Minh Hoàng`
+- **Mã số sinh viên (MSSV):** `24100665`
+- **Ngôn ngữ thiết kế:** Verilog HDL
+- **Top Module:** `tt_um_eee703128_24100665`
+- **Tần số xung nhịp:** `1000` Hz
 
 ---
 
-## Có gì trong kho này
+## 📝 Mô tả thiết kế
+
+### 1. Bài toán & Chức năng
+<Mô tả ngắn gọn 3–5 câu về bài toán: Mạch nhận tín hiệu đầu vào gì, xử lý chức năng gì, xuất tín hiệu đầu ra như thế nào. Mạch là mạch tổ hợp hay mạch tuần tự?>
+
+### 2. Nguyên lý hoạt động
+<Giải thích cấu trúc phần cứng và kiến trúc mạch:
+- Mạch gồm các khối logic/thanh ghi nào?
+- Đề tổ hợp: Bảng chân lý hoặc biểu thức logic chính.
+- Đề tuần tự: Sơ đồ trạng thái (FSM), danh sách các trạng thái và điều kiện chuyển trạng thái.>
+
+---
+
+## 🔌 Ánh xạ chân (Pinout Mapping)
+
+| Tên cổng (Module) | Chân vật lý | Tín hiệu kết nối | Loại | Ý nghĩa / Chức năng |
+|---|---|---|---|---|
+| `clk` | Clock | Clock System | In | Xung nhịp hệ thống |
+| `rst_n` | Reset | Reset System | In | Tín hiệu Reset (tích cực mức thấp `0`) |
+| `ena` | Enable | Power / Enable | In | Tín hiệu cho phép hoạt động |
+| `ui_in[7:0]` | `ui[7:0]` | `<Tín hiệu đầu vào>` | In | Tín hiệu vào chính |
+| `uo_out[7:0]` | `uo[7:0]` | `<Tín hiệu đầu ra>` | Out | Tín hiệu ra chính |
+| `uio_in[7:0]` | `uio[7:0]` | `<Tín hiệu I/O vào>` | In | Tín hiệu I/O linh hoạt (Input) |
+| `uio_out[7:0]` | `uio[7:0]` | `<Tín hiệu I/O ra>` | Out | Tín hiệu I/O linh hoạt (Output) |
+| `uio_oe[7:0]` | `uio[7:0]` | `<Cho phép ra I/O>` | Out | Tín hiệu điều khiển hướng buffer (1: Out, 0: In) |
+
+---
+
+## 📂 Cấu trúc thư mục dự án
 
 ```text
-src/project.v              ← viết thiết kế của em ở đây (đang chứa ví dụ mẫu)
-test/tb.v                  ← testbench, thay bằng ca kiểm thử của đề em
-info.yaml                  ← tên đề, MSSV, tần số xung nhịp, đặt tên chân
-docs/info.md               ← mô tả thiết kế, nộp kèm
-HUONG_DAN_CHAY_FLOW.md     ← đọc trước tiên: cách chạy và cách đọc kết quả
+.
+├── README.md                    # Tài liệu hướng dẫn & tổng quan dự án
+├── info.yaml                    # Thông tin cấu hình thiết kế cho chuỗi công cụ (Flow)
+├── HUONG_DAN_CHAY_FLOW.md       # Hướng dẫn chi tiết chạy RTL-to-GDSII
+├── KIEM_TRA_TRUOC_KHI_COMMIT.py # Script kiểm tra lỗi phổ biến trước khi push/commit
+├── docs/
+│   └── info.md                  # Báo cáo chi tiết về thiết kế (theo tiêu chí chấm điểm)
+├── src/
+│   └── project.v                # Mã nguồn Verilog HDL chính
+└── test/
+    └── tb.v                     # Testbench kiểm thử chức năng
 ```
-
-## Bốn việc phải sửa
-
-| Tệp | Sửa gì |
-|---|---|
-| `src/project.v` | Đổi `<MSSV>` trong tên module · xoá ví dụ mẫu · viết thiết kế của em |
-| `test/tb.v` | Đổi tên module cho khớp · thay ca kiểm thử · tính giá trị mong đợi **bằng tay trước** |
-| `info.yaml` | Tên đề, họ tên, MSSV, `top_module` (khớp `project.v`), `clock_hz`, đặt tên chân |
-| `docs/info.md` | Điền hết chỗ trong dấu `<>` |
-
-Xong bốn việc đó thì **Commit**. Vào thẻ **Actions**, đợi ~5 phút, tải kết quả ở mục *Artifacts*.
 
 ---
 
-## Ví dụ mẫu đang có sẵn
+## 🚀 Hướng dẫn phát triển & Kiểm thử
 
-`src/project.v` hiện chứa case `threshold_alarm` của học phần — chính cái đã học ở tuần 8–10:
-
-```verilog
-alarm = 1 khi sample >= threshold
-```
-
-Nó **không nằm trong 80 đề**, chỉ để em thấy cách nối tín hiệu vào khung chân và cách viết
-testbench. Đọc hiểu rồi xoá đi.
-
-Chạy thử ví dụ này trên máy (nếu có Icarus Verilog):
-
+### 1. Mô phỏng kiểm thử (Simulation)
+Chạy kiểm thử testbench cục bộ bằng `iverilog` hoặc các công cụ mô phỏng Verilog tương đương:
 ```bash
-iverilog -g2012 -o tb.out test/tb.v src/project.v && vvp tb.out
+# Biên dịch và chạy mô phỏng
+iverilog -g2012 -o tb.vvp src/project.v test/tb.v
+vvp tb.vvp
+
+# Mở dạng sóng (nếu có xuất file vcd)
+gtkwave tb.vcd
 ```
 
-Kết quả mong đợi: **7 ca, 0 sai**.
-
-> **Vì sao testbench mẫu có ca `sample = threshold`.** Đổi `>=` thành `>` là lỗi kinh điển và
-> mạch vẫn chạy — chỉ sai đúng ở biên. Testbench mẫu bắt được lỗi đó (2/7 ca đỏ). Testbench nào
-> không có ca biên thì gần như vô dụng. Rubric tiêu chí 2 chấm chính chỗ này.
+### 2. Tổng hợp & Tạo GDSII tự động (CI/CD)
+Khi đẩy code lên repository GitHub, GitHub Actions sẽ tự động kích hoạt chuỗi công cụ RTL-to-GDSII để tổng hợp, định vị, đi dây và xuất file kết quả (GDSII, ảnh layout, báo cáo STA, DRC, LVS).
 
 ---
 
-## Khung chân — dùng chung cho mọi đề
+## 📊 Tóm tắt kết quả (RTL-to-GDSII Results)
 
-```verilog
-module tt_um_eee703128_<MSSV> (
-    input  wire [7:0] ui_in,    // 8 chân vào riêng
-    output wire [7:0] uo_out,   // 8 chân ra riêng
-    input  wire [7:0] uio_in,   // 8 chân hai chiều — chiều vào
-    output wire [7:0] uio_out,  // 8 chân hai chiều — chiều ra
-    output wire [7:0] uio_oe,   // 1 = chân đó là đầu ra
-    input  wire       ena,      // luôn = 1
-    input  wire       clk,      // xung nhịp
-    input  wire       rst_n     // reset, TÍCH CỰC MỨC THẤP
-);
-```
+*Cập nhật các số liệu chính từ artifact báo cáo sau khi chạy xong GitHub Actions:*
 
-Ba quy tắc không được phá:
-
-1. **Không đổi danh sách cổng.** Kể cả đề tổ hợp cũng phải khai báo `clk` và `rst_n`.
-2. **Mọi chân ra phải được gán.** Không dùng thì gán `8'b0`. Để hở là lỗi.
-3. **`rst_n` tích cực mức thấp** — `rst_n == 0` nghĩa là đang reset.
-
-Cột *Giao diện* của mỗi đề cho biết gán tín hiệu nào vào chân nào.
+- **Diện tích thiết kế (Area):** `<...>` $\mu m^2$
+- **Tổng số Cell (Cell Count):** `<...>` cells
+- **Hệ số sử dụng (Utilization):** `<...>` %
+- **Worst Negative Slack (Setup STA):** `<...>` ns
+- **Công suất tiêu thụ (Power):** `<...>` mW
+- **Trạng thái DRC / LVS:** `<Sạch 0 lỗi / Clean>`
 
 ---
 
-## Nhắc lại điều quan trọng nhất
+## ⚠️ Giới hạn của thiết kế
 
-**58 trên 100 điểm nằm ở việc đọc hiểu kết quả**, không phải ở độ khó của thiết kế. Thiết kế
-được giữ đơn giản một cách có chủ ý. Chạy ra GDS mới là nửa đầu; nửa sau — và là nửa nặng điểm hơn —
-là giải thích được các con số nghĩa là gì, và chúng **không** chứng minh được điều gì.
-
-**Học phần này không chế tạo chip.** Em thu được một tệp layout dùng để học. Không phải tape-out,
-không phải sign-off, không phải sản phẩm sẵn sàng sản xuất. Viết vượt mức bị trừ điểm — xem mục 5
-của đề bài.
+- `<Nêu các trường hợp/điều kiện thiết kế chưa đáp ứng hoặc các giả định được áp dụng.>`
+- `<Các tần số hoạt động giới hạn hoặc kích thước dữ liệu đầu vào.>`
 
 ---
 
-## Ghi chú kỹ thuật
+## 📜 Giấy phép (License)
 
-- Chuỗi công cụ: **LibreLane** (bản kế tục OpenLane, do FOSSi Foundation duy trì) trên **PDK
-  SkyWater sky130A**, chạy qua GitHub Actions.
-- Khung chân và hạ tầng CI dựa trên mẫu `ttsky-verilog-template` của dự án Tiny Tapeout.
-- **Không bắt buộc nộp lên shuttle chế tạo.** Lớp chỉ dùng phần chạy tự động, hoàn toàn miễn phí.
+Dự án này được phát hành dưới giấy phép...
