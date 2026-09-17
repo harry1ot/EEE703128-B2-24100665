@@ -2,3 +2,11 @@
 KHONG_UPLOAD_TRUC_TIEP.md
 KIEM_TRA_TRUOC_KHI_COMMIT.py
 HUONG_DAN_CHAY_FLOW.md
+
+.env
+.env.local
+.env.production
+.env.development
+*.pem
+*.key
+*.cert
