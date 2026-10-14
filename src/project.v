@@ -1,50 +1,119 @@
-// ─────────────────────────────────────────────────────────────────────────────
-//  EEE703128 — Bài kiểm tra số 2 · KHUNG MẪU
-//  Quy ước bắt buộc của chuỗi công cụ:
-//    · `default_nettype none  ở đầu và `default_nettype wire ở cuối
-//    · rst_n tích cực mức THẤP (rst_n = 0 nghĩa là đang reset)
-//    · Mọi chân ra phải được gán giá trị, không được để hở
-//    · uio_oe[i] = 1 nghĩa là chân hai chiều thứ i làm ĐẦU RA
-// ─────────────────────────────────────────────────────────────────────────────
 `default_nettype none
+`timescale 1ns / 1ps
 
-module tt_um_eee703128_24100665 (
-    input  wire [7:0] ui_in,    // 8 chân vào riêng
-    output wire [7:0] uo_out,   // 8 chân ra riêng
-    input  wire [7:0] uio_in,   // 8 chân hai chiều — chiều vào
-    output wire [7:0] uio_out,  // 8 chân hai chiều — chiều ra
-    output wire [7:0] uio_oe,   // 1 = chân tương ứng là đầu ra
-    input  wire       ena,      // luôn bằng 1 khi thiết kế được chọn
-    input  wire       clk,      // xung nhịp hệ thống
-    input  wire       rst_n     // reset, TÍCH CỰC MỨC THẤP
+module tt_um_eee703128_24100665 #(
+    parameter integer CLK_HZ = 1000000,
+    parameter integer DIGIT_HZ = 100
+) (
+    input  wire [7:0] ui_in,
+    output wire [7:0] uo_out,
+    input  wire [7:0] uio_in,
+    output wire [7:0] uio_out,
+    output wire [7:0] uio_oe,
+    input  wire       ena,
+    input  wire       clk,
+    input  wire       rst_n
 );
 
-    // ══════════════════ PHẦN CỦA EM — BẮT ĐẦU ══════════════════
-    //
-    // Ví dụ mẫu dưới đây là case threshold_alarm của học phần (tuần 8–10):
-    //     alarm = 1 khi sample >= threshold
-    // Nó KHÔNG nằm trong 80 đề — chỉ để em thấy cách nối chân.
-    //
-    // Ánh xạ chân của ví dụ này:
-    //     ui_in [7:0] = sample
-    //     uio_in[7:0] = threshold
-    //     uo_out[0]   = alarm
-    //     uo_out[7:1] = 0  (phải gán, không được để hở)
+    // Two rising load_strobe edges load one four-digit BCD frame.
+    // The first byte contains digits 3:2, and the second contains digits 1:0.
+    localparam integer RAW_SCAN_DIV = CLK_HZ / (DIGIT_HZ * 4);
+    localparam integer SCAN_DIV = (RAW_SCAN_DIV < 1) ? 1 : RAW_SCAN_DIV;
+    localparam integer SCAN_COUNTER_WIDTH =
+        (SCAN_DIV <= 1) ? 1 : $clog2(SCAN_DIV);
 
-    wire [7:0] sample    = ui_in;
-    wire [7:0] threshold = uio_in;
-    wire       alarm     = (sample >= threshold);
+    reg [3:0] digit3;
+    reg [3:0] digit2;
+    reg [3:0] digit1;
+    reg [3:0] digit0;
+    reg [3:0] pending_digit3;
+    reg [3:0] pending_digit2;
+    reg       expect_second_pair;
+    reg       load_strobe_d;
 
-    assign uo_out  = {7'b0, alarm};
-    assign uio_out = 8'b0;      // ví dụ này không dùng chân hai chiều làm đầu ra
-    assign uio_oe  = 8'b0;      // ...nên toàn bộ để ở chiều VÀO
+    reg [SCAN_COUNTER_WIDTH-1:0] scan_counter;
+    reg [1:0] scan_index;
+    reg [2:0] pwm_counter;
 
-    // ══════════════════ PHẦN CỦA EM — KẾT THÚC ══════════════════
+    reg [3:0] selected_digit;
+    reg [6:0] segments_n;
+    reg [3:0] digit_enable_n;
 
-    // Chống cảnh báo "tín hiệu khai báo mà không dùng".
-    // Nếu đề của em là mạch tổ hợp thì clk và rst_n sẽ không được dùng —
-    // dòng này giữ cho công cụ không kêu. Đề tuần tự thì bỏ clk, rst_n ra khỏi đây.
-    wire _unused = &{ena, clk, rst_n, 1'b0};
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            digit3             <= 4'd0;
+            digit2             <= 4'd0;
+            digit1             <= 4'd0;
+            digit0             <= 4'd0;
+            pending_digit3     <= 4'd0;
+            pending_digit2     <= 4'd0;
+            expect_second_pair <= 1'b0;
+            load_strobe_d      <= 1'b0;
+            scan_counter       <= {SCAN_COUNTER_WIDTH{1'b0}};
+            scan_index         <= 2'd0;
+            pwm_counter        <= 3'd0;
+        end else begin
+            load_strobe_d <= uio_in[3];
+
+            if (ena && uio_in[3] && !load_strobe_d) begin
+                if (!expect_second_pair) begin
+                    pending_digit3     <= ui_in[7:4];
+                    pending_digit2     <= ui_in[3:0];
+                    expect_second_pair <= 1'b1;
+                end else begin
+                    digit3             <= pending_digit3;
+                    digit2             <= pending_digit2;
+                    digit1             <= ui_in[7:4];
+                    digit0             <= ui_in[3:0];
+                    expect_second_pair <= 1'b0;
+                end
+            end
+
+            if (ena) begin
+                pwm_counter <= pwm_counter + 1'b1;
+
+                if (scan_counter == SCAN_DIV - 1) begin
+                    scan_counter <= {SCAN_COUNTER_WIDTH{1'b0}};
+                    scan_index   <= scan_index + 1'b1;
+                end else begin
+                    scan_counter <= scan_counter + 1'b1;
+                end
+            end
+        end
+    end
+
+    always @* begin
+        case (scan_index)
+            2'd0: selected_digit = digit0;
+            2'd1: selected_digit = digit1;
+            2'd2: selected_digit = digit2;
+            default: selected_digit = digit3;
+        endcase
+
+        // Active-low segments, ordered a,b,c,d,e,f,g. Invalid BCD is blank.
+        case (selected_digit)
+            4'd0:    segments_n = 7'b0000001;
+            4'd1:    segments_n = 7'b1001111;
+            4'd2:    segments_n = 7'b0010010;
+            4'd3:    segments_n = 7'b0000110;
+            4'd4:    segments_n = 7'b1001100;
+            4'd5:    segments_n = 7'b0100100;
+            4'd6:    segments_n = 7'b0100000;
+            4'd7:    segments_n = 7'b0001111;
+            4'd8:    segments_n = 7'b0000000;
+            4'd9:    segments_n = 7'b0000100;
+            default: segments_n = 7'b1111111;
+        endcase
+
+        // Active-low digit selects. uio_out[4] selects digit 0.
+        digit_enable_n = ~(4'b0001 << scan_index);
+        if (!ena || !rst_n || (pwm_counter >= uio_in[2:0]))
+            digit_enable_n = 4'b1111;
+    end
+
+    assign uo_out  = {1'b0, (!ena || !rst_n) ? 7'b1111111 : segments_n};
+    assign uio_out = {digit_enable_n, 4'b0000};
+    assign uio_oe  = 8'b11110000;
 
 endmodule
 
