@@ -40,7 +40,9 @@ Testbench bao gồm reset, kiểm tra khung không cập nhật sau byte đầu,
 
 ## RTL-to-GDSII
 
-GitHub Actions trong `.github/workflows/rtl2gds.yml` chạy mô phỏng, sau đó chạy flow RTL-to-GDSII và lưu artifacts. Chỉ điền số liệu area, cell, utilization, timing, power và DRC/LVS vào báo cáo sau khi đọc kết quả của chính lần chạy. Flow thành công không chứng minh thiết kế đã được chế tạo, sign-off hoặc sẵn sàng sản xuất.
+`config.json` là cấu hình đầu vào của LibreLane, được workflow `.github/workflows/rtl2gds.yml` gọi sau bước mô phỏng. Cấu hình chọn `rtl/project.sv`, top module `tt_um_eee703128_24100665`, PDK `sky130A` với thư viện `sky130_fd_sc_hd`, clock `clk` với chu kỳ 1000 ns (1 MHz), và die ban đầu 100 × 100 µm. Die size là giả định floorplan để flow tham khảo, không phải kích thước đã được chứng minh là đủ; cần xác nhận từ báo cáo placement/routing của lần chạy thực tế.
+
+Workflow chạy RTL-to-GDSII và lưu artifacts. Chỉ điền số liệu area, cell, utilization, timing, power và DRC/LVS vào báo cáo sau khi đọc kết quả của chính lần chạy. Flow thành công không chứng minh thiết kế đã được chế tạo, sign-off hoặc sẵn sàng sản xuất.
 
 ## Giới hạn
 

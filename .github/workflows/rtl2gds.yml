@@ -25,7 +25,7 @@ on:
 env:
   # ---- SUA BA DONG NAY CHO KHOP DE CUA MINH -----------------------
   MA_DE: J04
-  DESIGN_NAME: J04_7SegLed_controller
+  DESIGN_NAME: tt_um_eee703128_24100665
   CONFIG: config.json
   # -----------------------------------------------------------------
 

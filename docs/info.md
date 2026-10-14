@@ -85,7 +85,16 @@ Testbench hiện có kiểm tra các trường hợp:
 
 Khi mở waveform, nên quan sát `load_strobe`, `expect_second_pair`, các thanh ghi digit, `scan_index`, `pwm_counter`, `uo_out[6:0]` và `uio_out[7:4]`. Tham số clock trong testbench được giảm để mô phỏng nhanh; tần số phần cứng được xác định bởi tham số RTL và clock thực tế.
 
-## 6. Giới hạn và giả định
+## 6. Cấu hình LibreLane
+
+Workflow `.github/workflows/rtl2gds.yml` gọi `librelane config.json`. Cấu hình này:
+
+- Chọn `rtl/project.sv` và top module `tt_um_eee703128_24100665` (phải trùng `DESIGN_NAME` với tên module RTL).
+- Chọn `PDK=sky130A` và thư viện cell chuẩn `sky130_fd_sc_hd`.
+- Ràng buộc clock `clk` với chu kỳ 1000 ns, tương ứng clock RTL giả định 1 MHz.
+- Khởi tạo floorplan tuyệt đối với `DIE_AREA=[0,0,100,100]` (100 × 100 µm). Đây là kích thước khởi đầu để flow thử chạy, không phải kết quả đã chứng minh là đủ chỗ. Nếu floorplan hoặc routing báo không đủ diện tích, cần điều chỉnh die sau khi xem log và báo cáo.
+
+## 7. Giới hạn và giả định
 
 - Đây là giao thức nạp đồng bộ đơn giản, không có `ready`, `busy`, timeout hay bộ lọc dội phím. Nguồn dữ liệu phải tạo strobe sạch, đồng bộ với `clk`.
 - Giữa hai lần nạp có thể có khoảng cách bất kỳ; nếu reset xảy ra, cặp đang chờ bị hủy.
