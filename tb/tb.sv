@@ -70,6 +70,9 @@ module tb;
     endtask
 
     initial begin
+        $dumpfile("tb.vcd");
+        $dumpvars(0, tb);
+
         ui_in = 8'd0;
         uio_in = 8'd7;  // Brightness 7/7; load strobe initially low.
         ena = 1'b1;

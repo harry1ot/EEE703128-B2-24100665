@@ -1,7 +1,3 @@
-# Đặc tả tham khảo — bộ điều khiển bốn LED 7 đoạn
-
-Đây là một đặc tả mẫu để học RTL tuần tự, bộ đếm, FSM nhỏ, bộ giải mã và mô phỏng. Các tần số là giả định cho thiết kế tham khảo; nếu đề chính thức hoặc bo mạch dùng giao diện khác, cần sửa đặc tả và RTL đồng bộ.
-
 ## 1. Mục tiêu và phạm vi
 
 Mạch hiển thị một số thập phân bốn chữ số trên bốn LED 7 đoạn bằng phương pháp quét đa hợp. Để tiết kiệm chân dữ liệu, mỗi lần nạp mạch nhận hai chữ số BCD đóng gói trong một byte; hai lần nạp tạo thành một khung bốn chữ số. Mạch quét lần lượt từng LED, giải mã BCD thành bảy đoạn và dùng PWM ba bit để đặt độ sáng. Đây là thiết kế RTL số; mạch ngoài cần cung cấp LED, điện trở hạn dòng và tầng đệm phù hợp.
