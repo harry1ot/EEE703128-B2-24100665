@@ -1,9 +1,14 @@
 tc_id,nguon,mo_ta,ket_qua,bang_chung
-TC-001,Charter muc 8,"Bốn chữ số khác nhau · số có 0 ở đầu (kiểm chế độ tắt) · đổi độ sáng · kiểm chu kỳ quét trên waveform",PASS,simulation.log
-TC-002,Charter muc 8,"Bổ sung ít nhất hai ca tự xây dựng; trong đó có ca biên.",PASS,simulation.log
-L0-PY,Tu xay,"Mo hinh chuan Python doc lap",PASS,python_reference_run.log
-L2-SIM,Tu xay,"Mo phong RTL voi testbench tu kiem",PASS,simulation.log
-L3-FF,Charter muc 10,"So cell tuan tu phai phu hop phan loai Charter: Tuần tự",PASS,../06_GDSII/synthesis/synth_stat.txt
-L3-SYN,Tu xay,"RTL tong hop duoc ra standard cell sky130",PASS,../06_GDSII/synthesis/yosys.log
-L4-GATE,Tu xay,"Mo phong gate-level tren netlist",CHUA CHAY,-
-L5-SDF,Tu xay,"Mo phong post-layout co back-annotate SDF",CHUA CHAY,-
+TC-001,Charter muc 8,"Bốn chữ số khác nhau, zero đầu, thay đổi brightness và quan sát chu kỳ quét",PARTIAL,"../GDS/simulation.log; ../GDS/tb.vcd"
+TC-002,Charter muc 8,"Ca tự xây dựng và ca biên: 0000, BCD ngoài miền, strobe giữ cao, brightness 0",PASS,"../GDS/simulation.log"
+TC-LOAD,RTL,"Byte đầu không cập nhật một phần; byte thứ hai chốt khung 1234",PASS,"../GDS/simulation.log; ../GDS/tb.vcd"
+TC-ZERO,RTL,"Zero đầu bị blank; digit hàng đơn vị của 0000 vẫn hiển thị",PASS,"../GDS/simulation.log"
+TC-BCD,RTL,"Nibble BCD không hợp lệ làm trống digit tương ứng",PASS,"../GDS/simulation.log"
+TC-STROBE,RTL,"Giữ strobe cao không tạo lần nạp thứ hai",PASS,"../GDS/simulation.log"
+TC-PWM0,RTL,"Brightness 0 tắt toàn bộ digit-select",PASS,"../GDS/simulation.log"
+L0-PY,Legacy core,"Python reference model chạy độc lập; không đối chiếu top TinyTapeout",PASS,"python_reference_run.log"
+L2-SIM,RTL,"Testbench tự kiểm top TinyTapeout",PASS,"../GDS/simulation.log"
+L3-FF,Top TinyTapeout,"Synthesis ghi nhận cell tuần tự",PASS,"../GDS/runs/RUN_2026-10-20_07-49-51/06-yosys-synthesis/yosys-synthesis.log"
+L3-SYN,Top TinyTapeout,"RTL tổng hợp với sky130_fd_sc_hd",PASS,"../GDS/runs/RUN_2026-10-20_07-49-51/"
+L4-GATE,Chua chay,"Mô phỏng gate-level trên netlist",CHUA CHAY,-
+L5-SDF,Chua chay,"Mô phỏng post-layout có back-annotate SDF",CHUA CHAY,-

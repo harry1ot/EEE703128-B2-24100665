@@ -74,9 +74,12 @@ Câu trả lời kèm bằng chứng: `05_VERIFICATION/verification_report.md` v
 
 ## 8. Rủi ro chính (Charter mục 10)
 
-> Chỗ hay tắc: Hai bộ đếm (quét và PWM) chạy không đồng bộ với nhau → độ sáng nhấp nháy không đều.
-> Dấu hiệu làm đúng: 4×4 (chữ số) + 2 (chọn LED) + 8 (PWM) + 8 (chia quét) ≈ 34–38 ô nhớ.
-> Điều kiện giao đề: Chỉ giao khi đã CI xanh trước tuần 11.
+Quét và PWM dùng hai bộ đếm riêng; độ sáng trung bình phụ thuộc vào thời gian
+enable và clock thực tế. Cần kiểm tra trên phần cứng nếu thay đổi tần số hoặc tải
+LED. Run hiện tại tổng hợp 43 flip-flop cho top TinyTapeout; không dùng ước lượng
+ô nhớ trong Charter làm số đo thay thế.
+
+Điều kiện giao đề theo Charter: CI xanh trước tuần 11.
 
 ---
 

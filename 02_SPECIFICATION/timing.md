@@ -1,68 +1,28 @@
-# J04 · Đặc tả thời gian (Timing)
+# J04 · Timing
 
----
+Các con số dưới đây mô tả RTL top TinyTapeout, không phải core `j04_display_core`.
 
-## 1. Bản chất thời gian của khối này
+## Timing chức năng
 
-J04 là mạch **Tuần tự**.
+| Hạng mục | Giá trị / hành vi |
+|---|---|
+| Clock RTL mặc định | `CLK_HZ=1 MHz`, tham số trong module |
+| Refresh mục tiêu | `DIGIT_HZ=100 Hz` cho mỗi digit |
+| Bộ chia | `SCAN_DIV=CLK_HZ/(4×DIGIT_HZ)=2500` |
+| Khe digit | Một lần chuyển digit mỗi 2500 chu kỳ được enable |
+| Reset | Bất đồng bộ, active-low |
+| Nạp dữ liệu | Strobe được lấy mẫu đồng bộ; phát hiện cạnh lên |
 
-Khối có **10 flip-flop**, hoạt động đồng bộ theo cạnh clock.
+Ở cấu hình mặc định, mỗi digit có tần số refresh 100 Hz. Nếu `ena` thấp, bộ đếm
+dừng nên thời gian thực giữa các lần chuyển digit phụ thuộc thời lượng enable thấp.
+Tham số nên được chọn sao cho `DIGIT_HZ` khác 0 và bộ chia nguyên có giá trị phù
+hợp với clock của hệ thống.
 
-| Khái niệm | Áp dụng? |
-|---|:-:|
-| Chu kỳ clock | ✅ |
-| Setup / hold | ✅ |
-| Đường reg→reg, in→reg, reg→out | ✅ |
-| CTS (cây clock) | ✅ ở bước physical design |
-| WNS / TNS | ✅ |
+## STA của run RTL-to-GDSII
 
-## 2. Phương pháp ràng buộc đã dùng
+Run `RUN_2026-10-20_07-49-51` dùng generic fallback SDC của flow vì cấu hình chưa
+chỉ định SDC sign-off riêng. Chi tiết clock, I/O delay và uncertainty nằm tại
+`06_GDSII/sta/README.md`. Không dùng các giả định fallback này để tuyên bố timing
+đã được duyệt cho hệ thống đích.
 
-Chế độ: **clock thật của thiết kế**.
-
-File SDC: `04_IMPLEMENTATION/constraints/design.sdc`
-
-```tcl
-# Mach TUAN TU: dinh nghia clock that tu cong clock cua thiet ke.
-# Chu ky 10 ns va IO delay 1 ns la GIA DINH phan tich khoi diem,
-# KHONG phai yeu cau he thong. Phai neu kem moi con so bao cao.
-create_clock -name clk -period 10.0 [get_ports clk]
-set_input_delay  1.0 -clock clk [all_inputs]
-set_output_delay 1.0 -clock clk [all_outputs]
-```
-
-## 3. Bốn giả định phải nêu kèm mọi con số
-
-| # | Giả định | Giá trị dùng trong gói này |
-|---|---|---|
-| G-1 | Chu kỳ clock | `10,0 ns` — **giả định khởi điểm**, chưa phải yêu cầu hệ thống |
-| G-2 | Input/output delay | 1,0 ns — giả định khởi điểm cho biên IO |
-| G-3 | Thư viện + PVT | `sky130_fd_sc_hd__tt_025C_1v80.lib` (typical · 25 °C · 1,80 V) |
-| G-4 | Ký sinh dây (RC) | **Chưa có** — số liệu mới ở mức sau tổng hợp, chưa qua P&R |
-
-> ❗ Không được diễn giải "period 10 ns" thành "J04 chạy được ở 100 MHz".
-> Tần số tối đa thật phải lấy từ STA sau routing, ở nhiều góc PVT.
-
-## 4. Số liệu thời gian đo được
-
-| Đại lượng | Giá trị |
-|---|---:|
-| Startpoint | `bcd_digits[12]` |
-| Endpoint | `seg[3]` |
-| **Data arrival time** | **2,7 ns** |
-| Slack | 6,3 ns |
-| WNS | `wns max 0.00` |
-| TNS | `tns max 0.00` |
-| Số cell trên đường tới hạn | 7 |
-
-Công cụ: **OpenSTA 3.1.0** · Bằng chứng: `06_GDSII/sta/timing_report_max.txt`
-
-## 5. Nghĩa vụ của tầng ngoài
-
-```
-t_clk  ≥  t_ckq  +  t_logic_max  +  t_setup  +  t_skew   (do chinh STA bao cao)
-```
-
----
-
-*Phiên bản: v1.0 · Ngày: 2026-09-24 · Truy vết: REQ-J04-020, AC-12…AC-14.*
+Không có kết quả gate-level hoặc post-layout SDF simulation trong hồ sơ.

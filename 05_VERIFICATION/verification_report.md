@@ -1,84 +1,29 @@
-# J04 · Báo cáo kiểm chứng (Verification Report)
+# J04 · Báo cáo kiểm chứng
 
+## RTL simulation
 
-
-**Ngày chạy:** 2026-09-24 · **Phiên bản:** v1.0
-
----
-
-## 1. Điều kiện tạo ra bằng chứng
-
-> Charter mục 6: *"Mỗi khẳng định đi kèm bằng chứng **và điều kiện tạo ra bằng chứng đó**."*
-
-| Hạng mục | Giá trị |
+| Thuộc tính | Giá trị |
 |---|---|
-| Hệ điều hành | Ubuntu 22.04 LTS (x86-64) |
-| Công cụ mô phỏng | **Icarus Verilog 12.0 (stable)** (cờ `-g2012`) |
-| Top module | `j04_display_core` |
-| RTL | `04_IMPLEMENTATION/rtl/` |
-| Mô hình chuẩn | `05_VERIFICATION/golden_model/` |
-| Testbench | `05_VERIFICATION/testbench/` |
-| Lệnh chạy | `bash 04_IMPLEMENTATION/scripts/01_run_sim.sh` |
-| Nguồn gốc gói | `J04_FINAL_MENTOR_PACKAGE_v1_0` |
+| Top | `tt_um_eee703128_24100665` |
+| RTL | `rtl/project.sv` |
+| Testbench | `tb/tb.sv` |
+| Công cụ | Icarus Verilog; log/version trong `GDS/` |
+| Điều kiện clock test | `CLK_HZ=40`, `DIGIT_HZ=1` |
+| Kết quả | PASS cho các assertion/checks có trong testbench |
 
-## 2. Kết quả tổng hợp
+Testbench kiểm reset, giao thức nạp khung hai byte, kết quả quét/giải mã một số
+digit, blank zero đầu, `0000`, BCD ngoài miền, strobe giữ cao và brightness 0.
+Waveform `tb.vcd` được tạo trong run. Testbench không đo duty PWM hay refresh ở
+cấu hình mặc định; xem `test_matrix.csv` để biết phạm vi từng ca.
 
-| Lớp | Nội dung | Kết quả |
-|---|---|---|
-| L0 | Mô hình chuẩn Python | ✅ **PASS** |
-| L2 | Mô phỏng RTL | ✅ PASS — testbench chạy hết, không có assertion nào vi phạm |
-| L3 | Kiểm cấu trúc — số flip-flop | ✅ đo được **10** FF, phân loại Charter là **Tuần tự** |
-| L4 | Mô phỏng gate-level | ⬜ chưa chạy |
-| L5 | Mô phỏng post-layout (SDF) | ⬜ chưa chạy |
+## Tổng hợp và physical
 
-## 3. Trích log mô phỏng
+Run `RUN_2026-10-20_07-49-51` áp dụng cho cùng top TinyTapeout. Yosys ghi 176 cell,
+43 flip-flop và diện tích tổng hợp 2337.2416 µm². Flow tạo final GDS; kết quả DRC,
+LVS, STA và power được tổng hợp trong `06_GDSII/physical_report.md`.
 
-```
-J04 RTL testbench completed
-05_VERIFICATION/testbench/j04_display_core_tb.sv:42: $finish called at 40985 (1s)
-```
+## Giới hạn
 
-Log đầy đủ: [`simulation.log`](simulation.log)
-
-## 4. Kiểm cấu trúc — số flip-flop
-
-Trích `../06_GDSII/synthesis/synth_stat.txt` (Yosys 0.33 (git sha1 2584903a060) + `sky130_fd_sc_hd`):
-
-| Chỉ số | Giá trị |
-|---|---:|
-| Tổng số cell | **122** |
-| Cell tuần tự (flip-flop / latch) | **10** |
-| Diện tích | 922,1344 µm² |
-
-
-✅ Đúng phân loại **Tuần tự** của Charter — có ô nhớ đồng bộ theo clock.
-
-
-## 5. Trả lời câu hỏi kỹ thuật của Charter (mục 2)
-
-> 1. Chu kỳ quét phải nhanh bao nhiêu để mắt không thấy nháy — và đo được trên waveform không?
-> 2. PWM chỉnh độ sáng lồng vào chu kỳ quét như thế nào — hai bộ đếm hay một?
-> 3. Chế độ tắt số 0 vô nghĩa ở đầu tốn bao nhiêu logic?
-> Sinh viên được phép thay bằng câu hỏi của mình, miễn là cụ thể và trả lời được bằng bằng chứng — không viết “tìm hiểu về…”.
-
-Phần trả lời dựa trên số liệu đo được nằm ở:
-
-- Câu về **giao diện / tín hiệu**: `02_SPECIFICATION/interface.md`
-- Câu về **thời gian / tần số**: `06_GDSII/sta/` và `06_GDSII/physical_report.md`
-- Câu về **diện tích / tài nguyên**: `06_GDSII/physical_report.md` §2
-- Phân tích bản chất và cơ chế: `implementation-notes_J04.md`
-
-## 6. Những gì báo cáo này **chưa** chứng minh
-
-| Chưa chứng minh | Vì sao |
-|---|---|
-| Kiến trúc bên trong đúng như mô tả | Kiểm chứng chức năng mù về cấu trúc — phải đọc RTL và netlist |
-| Độ trễ lan truyền đạt yêu cầu | Mô phỏng hành vi là zero-delay |
-| Mạch đúng sau place & route | Chưa chạy P&R |
-| Không có glitch gây hại | Mô phỏng zero-delay không sinh glitch |
-
-Danh sách đầy đủ: `07_TRACEABILITY/limitations.md`.
-
----
-
-*Truy vết: REQ-J04-001, REQ-J04-003, REQ-J04-010…013.*
+Không có gate-level simulation hoặc post-layout simulation có SDF. SDC physical
+dùng generic fallback do chưa khai báo SDC sign-off riêng. Các kết quả không phải
+sign-off và không chứng minh hoạt động trên board hoặc silicon.

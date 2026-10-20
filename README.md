@@ -1,111 +1,56 @@
-# J04 — Bộ điều khiển bốn LED 7 đoạn theo phương pháp quét đa hợp
+# J04 — Bộ điều khiển bốn LED 7 đoạn
 
-## Thông tin dự án
+## Nguồn RTL
 
-| | |
-|---|---|
-| **Mã đề** | J04 |
-| **Môn học** | EEE703128 — Nhập môn Thiết kế Vi mạch Tích hợp |
-| **Sinh viên** | Phạm Minh Hoàng |
-| **MSSV** | 24100665 |
-| **Ngôn ngữ** | Verilog/SystemVerilog |
-| **Nhóm / độ khó** | J · Đề khó — nhiều khối, có bắt tay hoặc đường ống |
-| **Loại mạch** | Tuần tự |
-| **Top module TinyTapeout** | `tt_um_eee703128_24100665` |
-| **Top module phân tích** | `j04_display_core` trong `04_IMPLEMENTATION/rtl/` |
-| **Clock mặc định** | 1 MHz |
-| **Tần số làm mới mỗi digit** | 100 Hz |
-| **Quy mô tham khảo theo Charter** | ~400–560 cell · 1×1 tile |
+Thiết kế nộp là top TinyTapeout `tt_um_eee703128_24100665`. Bản RTL giảng viên gửi
+được giữ tại `src/project.v`; `rtl/project.sv` là bản dùng cho mô phỏng và LibreLane.
+Hai file hiện giống hệt nhau. Không cần chép hay viết lại RTL để đồng bộ.
 
-## Tổng quan
+`04_IMPLEMENTATION/rtl/j04_display_core.sv` là một core phân tích riêng từ bản trước,
+khác giao diện và không được dùng bởi cấu hình TinyTapeout, testbench `tb/tb.sv` hay
+run RTL-to-GDSII được báo cáo. Các tài liệu yêu cầu, đặc tả và kiến trúc trong hồ sơ
+này mô tả top TinyTapeout; không lấy kết quả của core riêng để thay thế.
 
-Khối hiển thị bốn chữ số trên đồng hồ đo bằng phương pháp quét đa hợp, dùng chung đường dữ liệu để tiết kiệm chân. Bản TinyTapeout nhận hai cặp chữ số BCD qua `ui_in[7:0]`: cạnh lên `uio_in[3]` nạp một byte, cặp đầu là hai chữ số bên trái và cặp thứ hai là hai chữ số bên phải. Khung hiển thị chỉ cập nhật sau khi nhận đủ hai byte.
+## Chức năng
 
-Thiết kế giải mã BCD sang bảy đoạn active-low, quét lần lượt bốn digit và điều chỉnh độ sáng bằng PWM ba bit. Các số 0 vô nghĩa ở đầu được tự động tắt; chữ số hàng đơn vị luôn hiển thị, kể cả khi giá trị là `0000`. BCD ngoài khoảng 0–9 hiển thị trống.
+Mạch nhận hai byte BCD qua `ui_in[7:0]`. Cạnh lên đồng bộ của `uio_in[3]` thứ nhất
+lưu hai chữ số bên trái; cạnh lên thứ hai chốt đủ bốn chữ số để hiển thị. Mạch quét
+bốn digit, giải mã BCD sang bảy đoạn active-low và nhận mức sáng PWM ba bit tại
+`uio_in[2:0]`. Số 0 ở đầu được làm trống; digit hàng đơn vị vẫn hiện số 0. BCD không
+hợp lệ làm trống digit tương ứng.
 
-## Ánh xạ chân TinyTapeout
-
-| Chân | Tín hiệu / chức năng |
-|---|---|
-| `ui_in[7:4]` | Chữ số BCD trái của cặp đang nạp |
-| `ui_in[3:0]` | Chữ số BCD phải của cặp đang nạp |
-| `uio_in[3]` | Strobe nạp; lấy cạnh lên đồng bộ với `clk` |
-| `uio_in[2:0]` | Mức sáng PWM; 0=tắt, 7=7/8 duty |
-| `uo_out[6:0]` | `{a,b,c,d,e,f,g}`, active-low |
-| `uio_out[7:4]` | Chọn digit 3..0, active-low |
-| `uio_oe[7:4]` / `uio_oe[3:0]` | `1111` đầu ra / `0000` đầu vào |
-| `rst_n` | Reset active-low |
-| `ena` | Enable; khi `0`, dừng hoạt động và tắt digit |
-
-`uio[3:0]` chỉ dùng làm đầu vào và `uio[7:4]` chỉ dùng làm đầu ra, tránh gán một chân vừa nhận dữ liệu vừa phát tín hiệu chọn LED. Sơ đồ khối, giao thức nạp, phép tính tần số và giả định được trình bày trong [docs/info.md](docs/info.md).
-
-## Kiến trúc và tài liệu
-
-Kiến trúc gồm bộ phát hiện cạnh nạp và FSM hai trạng thái, hai thanh ghi staging, bốn thanh ghi chữ số, bộ chia clock quét, mux chọn digit, bộ giải mã BCD và bộ đếm PWM.
-
-| Bạn muốn | Tài liệu |
-|---|---|
-| Nắm nhanh bản chất và cách thực hiện | [implementation-notes_J04.md](implementation-notes_J04.md) hoặc [bản HTML](implementation-notes_J04.html) |
-| Xem yêu cầu, đặc tả và kiến trúc | `01_REQUIREMENT/`, `02_SPECIFICATION/`, `03_ARCHITECTURE/` |
-| Xem RTL, ràng buộc và scripts | `04_IMPLEMENTATION/` |
-| Xem mô hình chuẩn và kiểm chứng | `05_VERIFICATION/` |
-| Xem báo cáo PPA, timing, power, DRC/LVS và GDS | [06_GDSII/physical_report.md](06_GDSII/physical_report.md) |
-| Xem RTM, chỉ mục bằng chứng và giới hạn | [07_TRACEABILITY/RTM.csv](07_TRACEABILITY/RTM.csv), [evidence_index.md](07_TRACEABILITY/evidence_index.md), [limitations.md](07_TRACEABILITY/limitations.md) |
-
-### Cây thư mục hồ sơ
-
-```text
-J04/
-├── README.md
-├── implementation-notes_J04.md / implementation-notes_J04.html
-├── 01_REQUIREMENT/     application · requirements · scope · acceptance_criteria
-├── 02_SPECIFICATION/   functional_spec · interface · timing · corner_cases · parameters
-├── 03_ARCHITECTURE/    system_diagram · block_diagram · datapath · control · fsm
-│                       timing_diagram · tradeoff
-├── 04_IMPLEMENTATION/  rtl/ · constraints/ · scripts/ · README
-├── 05_VERIFICATION/    golden_model/ · testbench/ · assertions/ · waveforms/
-│                       testplan · test_matrix.csv · verification_report
-├── GDS/                runs/<RUN_ID>/ final GDS · metrics · logs (artifact thô)
-├── 06_GDSII/           synthesis/ · sta/ · power/ · physical_report.md
-└── 07_TRACEABILITY/    RTM.csv · evidence_index.md · limitations.md
-```
-
-## Kiểm thử mô phỏng
-
-Chạy testbench TinyTapeout từ thư mục gốc:
+## Chạy mô phỏng
 
 ```sh
-iverilog -g2012 -o sim.vvp rtl/project.sv tb/tb.sv
-vvp sim.vvp
+iverilog -g2012 -s tb -o /tmp/j04-sim.vvp rtl/project.sv tb/tb.sv
+vvp /tmp/j04-sim.vvp
 ```
 
-Testbench kiểm tra reset, khung không cập nhật sau byte đầu, nạp và quét `1234`, blank số 0 đầu với `0005`, trường hợp biên `0000`, BCD không hợp lệ, strobe bị giữ mức cao và độ sáng bằng 0. Tham số clock trong testbench được giảm để mô phỏng nhanh; thiết kế mặc định dùng clock 1 MHz và refresh 100 Hz mỗi digit.
+Testbench tự kiểm tra reset, giao thức nạp hai byte, quét/giải mã, số 0 đầu, `0000`,
+BCD không hợp lệ, strobe giữ mức cao và brightness bằng 0. Tần số trong testbench
+được giảm để chạy nhanh; phép tính mặc định của RTL dùng `CLK_HZ=1 MHz` và
+`DIGIT_HZ=100 Hz`.
 
-Chạy mô hình chuẩn và các script của hồ sơ phân tích:
+## Hồ sơ
 
-```sh
-python3 05_VERIFICATION/golden_model/reference_model.py
-bash 04_IMPLEMENTATION/scripts/01_run_sim.sh
-bash 04_IMPLEMENTATION/scripts/02_run_synth.sh
-sta -no_splash -exit 04_IMPLEMENTATION/scripts/03_run_sta.tcl
-bash 04_IMPLEMENTATION/scripts/04_run_librelane.sh  # cần PDK sky130A
-```
+| Thư mục | Nội dung |
+|---|---|
+| `01_REQUIREMENT/` | Yêu cầu và phạm vi theo Charter |
+| `02_SPECIFICATION/` | Giao diện, hành vi và timing của top TinyTapeout |
+| `03_ARCHITECTURE/` | Sơ đồ và mô tả khối theo RTL được nộp |
+| `04_IMPLEMENTATION/` | RTL core phân tích riêng và các script của core |
+| `05_VERIFICATION/` | Mô hình tham khảo, testbench và kết quả |
+| `06_GDSII/` | Báo cáo tổng hợp, timing, power và physical |
+| `07_TRACEABILITY/` | RTM, bằng chứng và giới hạn |
+| `08_ORIGINAL_SOURCE/` | Bản lưu core phân tích cũ, không phải top TinyTapeout |
+| `GDS/runs/` | Artifact thô từ run RTL-to-GDSII |
 
 ## Kết quả RTL-to-GDSII
 
-Run `RUN_2026-10-20_07-49-51` của top TinyTapeout đã hoàn tất và tạo GDS. Tổng hợp ghi nhận
-176 cell và 43 flip-flop; final metrics ghi 51.81% utilization, 0 lỗi DRC ở Magic/KLayout và
-LVS `Circuits match uniquely`. Các số liệu, điều kiện SDC, cảnh báo và liên kết artifact được
-tổng hợp tại [06_GDSII/physical_report.md](06_GDSII/physical_report.md).
+Run `RUN_2026-10-20_07-49-51` hoàn tất cho top TinyTapeout, sinh final GDS; báo cáo
+ghi nhận 176 cell tổng hợp, 43 flip-flop, 0 lỗi DRC trong các checker đã chạy và
+LVS `Circuits match uniquely`. Flow dùng generic fallback SDC; lint có 448 warnings.
+Chi tiết và giới hạn nằm trong `06_GDSII/physical_report.md`. Đây không phải tuyên bố
+sign-off, tape-out hay kiểm chứng trên silicon.
 
-Đây là kết quả của top `tt_um_eee703128_24100665`, không phải của core
-`j04_display_core`. Flow dùng generic fallback SDC vì chưa khai báo constraint riêng; kết quả
-không được diễn giải thành sign-off, tape-out, chế tạo hoặc kiểm tra trên silicon.
-
-## Giới hạn
-
-Đây là thiết kế học tập ở mức RTL, không bao gồm driver LED, điện trở hạn dòng hay kiểm thử phần cứng. Giao thức không có `ready/busy`, bộ lọc dội phím hoặc decimal point. Thiết kế không chèn khoảng tắt riêng giữa các digit nên cần kiểm tra nguy cơ ghosting trên mạch thực.
-
----
-
-*Nguồn chuẩn: Project Charter J04, mục 1–10. Hồ sơ phân tích: v1.0 · 2026-09-24.*
+*Nguồn chuẩn: Project Charter J04 và RTL giảng viên cung cấp.*

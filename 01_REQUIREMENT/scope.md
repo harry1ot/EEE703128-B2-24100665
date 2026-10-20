@@ -1,42 +1,27 @@
-# J04 · Phạm vi (Scope)
+# J04 · Phạm vi
 
-Trích và cấu trúc hoá từ **Project Charter — J04, mục 3**.
+## Trong phạm vi
 
----
+- Mô tả yêu cầu, giao diện và hành vi của top TinyTapeout trong `rtl/project.sv`.
+- Kiểm thử mô phỏng bằng `tb/tb.sv` và mô hình tham khảo Python.
+- Tổng hợp, STA, power và RTL-to-GDSII theo các artifact còn lưu trong `GDS/`.
+- Truy vết kết luận tới bằng chứng và điều kiện tạo bằng chứng.
 
-## 1. TRONG PHẠM VI
+| Thành phần hồ sơ | Vị trí |
+|---|---|
+| Bối cảnh ứng dụng | `01_REQUIREMENT/application.md` |
+| Giao diện và đặc tả | `02_SPECIFICATION/` |
+| Kiến trúc | `03_ARCHITECTURE/` |
+| Bằng chứng số và physical | `05_VERIFICATION/`, `06_GDSII/` |
+| RTM và giới hạn | `07_TRACEABILITY/` |
 
-Tám thành phần bắt buộc của hồ sơ: bối cảnh ứng dụng · sơ đồ khối hệ thống · phân loại analog/digital/mixed · bảng giao diện của chính khối này · một artifact số có chú thích · sơ đồ vòng đời · RTM-lite (yêu cầu → khối → bằng chứng → giới hạn) · kết luận và giới hạn.
+## Ngoài phạm vi
 
-### Tám thành phần bắt buộc nằm ở đâu trong cây thư mục này
+Thiết kế board/driver LED, điều khiển dòng, decimal point, nhiều hơn bốn digit,
+kiểm tra trên silicon và ASIC sign-off. GDS/DRC/LVS trong hồ sơ là kết quả của run
+cụ thể, không chứng minh chế tạo hay khả năng hoạt động trên phần cứng.
 
-| # | Thành phần | Vị trí |
-|---|---|---|
-| 1 | Bối cảnh ứng dụng | `01_REQUIREMENT/application.md` §1 |
-| 2 | Sơ đồ khối hệ thống | `03_ARCHITECTURE/system_diagram.md` |
-| 3 | Phân loại analog / digital / mixed | `01_REQUIREMENT/application.md` §3 |
-| 4 | Bảng giao diện của chính khối này | `02_SPECIFICATION/interface.md` §2 |
-| 5 | Một artifact số có chú thích | `05_VERIFICATION/waveforms/` · `06_GDSII/synthesis/` |
-| 6 | Sơ đồ vòng đời | `03_ARCHITECTURE/system_diagram.md` §cuối |
-| 7 | RTM-lite | `07_TRACEABILITY/RTM.csv` |
-| 8 | Kết luận và giới hạn | `07_TRACEABILITY/limitations.md` |
+## Nguồn liên quan
 
-## 2. MỞ RỘNG — tự nguyện, **không** phải điều kiện đạt
-
-Tự nguyện, không phải điều kiện đạt: chạy chuỗi công cụ LibreLane với PDK sky130A trên bộ cài đặt đã xác minh, rồi đọc báo cáo do chính lần chạy đó sinh ra.
-
-Trạng thái trong gói này: script đã chuẩn bị sẵn tại
-`04_IMPLEMENTATION/scripts/04_run_librelane.sh`. Kết quả thật **chưa chạy** —
-xem `06_GDSII/physical_report.md`.
-
-## 3. NGOÀI PHẠM VI
-
-Nhiều hơn bốn chữ số, ma trận LED, điều khiển dòng. Với mọi đề: thiết kế analog mức transistor, tự làm physical design, ASIC sign-off, tape-out, chế tạo và kiểm tra sau chế tạo.
-
-> ❗ Hệ quả về cách viết kết luận: **không** được dùng phát biểu vượt mức như "đã sign-off",
-> "đã tape-out", "đã chế tạo", "đã kiểm tra trên silicon".
-> Xem `07_TRACEABILITY/limitations.md`.
-
----
-
-*Phiên bản: v1.0 · Ngày: 2026-09-24 · Nguồn: Charter J04 mục 3.*
+`04_IMPLEMENTATION/rtl/j04_display_core.sv` và các script cùng thư mục là core phân
+tích riêng, không thuộc top TinyTapeout và không làm đầu vào cho báo cáo GDS hiện tại.
