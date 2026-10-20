@@ -49,7 +49,8 @@ Kiến trúc gồm bộ phát hiện cạnh nạp và FSM hai trạng thái, hai
 | Xem yêu cầu, đặc tả và kiến trúc | `01_REQUIREMENT/`, `02_SPECIFICATION/`, `03_ARCHITECTURE/` |
 | Xem RTL, ràng buộc và scripts | `04_IMPLEMENTATION/` |
 | Xem mô hình chuẩn và kiểm chứng | `05_VERIFICATION/` |
-| Xem RTM, bằng chứng và giới hạn | `07_TRACEABILITY/` |
+| Xem báo cáo PPA, timing, power, DRC/LVS và GDS | [06_GDSII/physical_report.md](06_GDSII/physical_report.md) |
+| Xem RTM, chỉ mục bằng chứng và giới hạn | [07_TRACEABILITY/RTM.csv](07_TRACEABILITY/RTM.csv), [evidence_index.md](07_TRACEABILITY/evidence_index.md), [limitations.md](07_TRACEABILITY/limitations.md) |
 
 ### Cây thư mục hồ sơ
 
@@ -64,8 +65,9 @@ J04/
 ├── 04_IMPLEMENTATION/  rtl/ · constraints/ · scripts/ · README
 ├── 05_VERIFICATION/    golden_model/ · testbench/ · assertions/ · waveforms/
 │                       testplan · test_matrix.csv · verification_report
-├── 06_GDSII/           synthesis/ · sta/ · power/ · physical_report
-└── 07_TRACEABILITY/    RTM.csv · evidence_index · limitations
+├── GDS/                runs/<RUN_ID>/ final GDS · metrics · logs (artifact thô)
+├── 06_GDSII/           synthesis/ · sta/ · power/ · physical_report.md
+└── 07_TRACEABILITY/    RTM.csv · evidence_index.md · limitations.md
 ```
 
 ## Kiểm thử mô phỏng
@@ -89,26 +91,16 @@ sta -no_splash -exit 04_IMPLEMENTATION/scripts/03_run_sta.tcl
 bash 04_IMPLEMENTATION/scripts/04_run_librelane.sh  # cần PDK sky130A
 ```
 
-## Kết quả hồ sơ phân tích
+## Kết quả RTL-to-GDSII
 
-Hồ sơ v1.0 ghi nhận mô hình chuẩn Python và mô phỏng Icarus Verilog PASS; synthesis, STA và ước lượng công suất đã chạy; P&R chưa chạy do cần PDK sky130A. Các số liệu bên dưới thuộc khối phân tích `j04_display_core` và môi trường/cấu hình được ghi trong hồ sơ đó; không xem chúng là kết quả synthesis của top module TinyTapeout trong `rtl/project.sv`.
+Run `RUN_2026-10-20_07-49-51` của top TinyTapeout đã hoàn tất và tạo GDS. Tổng hợp ghi nhận
+176 cell và 43 flip-flop; final metrics ghi 51.81% utilization, 0 lỗi DRC ở Magic/KLayout và
+LVS `Circuits match uniquely`. Các số liệu, điều kiện SDC, cảnh báo và liên kết artifact được
+tổng hợp tại [06_GDSII/physical_report.md](06_GDSII/physical_report.md).
 
-| Chỉ số trong hồ sơ `j04_display_core` | Giá trị | Công cụ / nguồn |
-|---|---:|---|
-| Số cell | 122 | Yosys 0.33 |
-| Flip-flop | 10 | Yosys 0.33 |
-| Diện tích | 922,1344 µm² | Yosys 0.33 |
-| Đường tới hạn | `bcd_digits[12]` → `seg[3]` | OpenSTA 3.1.0 |
-| Độ trễ | 2,7 ns | OpenSTA 3.1.0 |
-| Công suất ước lượng | 5.52e-05 W | Báo cáo trong hồ sơ |
-
-Các kết quả timing, diện tích và công suất phụ thuộc vào thư viện, góc PVT, giả định timing và cấu hình công cụ. P&R, DRC, LVS và GDSII chưa được xác nhận; không suy diễn các kết quả này thành sign-off hay khả năng chế tạo.
-
-## RTL-to-GDSII
-
-`config.json` là cấu hình LibreLane dùng workflow `.github/workflows/rtl2gds.yml`. Cấu hình chọn `rtl/project.sv`, top `tt_um_eee703128_24100665`, PDK `sky130A`, thư viện `sky130_fd_sc_hd`, clock `clk` với chu kỳ 1000 ns (1 MHz) và die ban đầu 100 × 100 µm.
-
-Die size là giả định floorplan, chưa được chứng minh là đủ. Chỉ ghi số liệu area, cell, utilization, timing, power và trạng thái DRC/LVS sau khi đọc kết quả của chính lần chạy thực tế. Flow thành công không đồng nghĩa thiết kế đã sign-off, tape-out, chế tạo hoặc kiểm tra trên silicon.
+Đây là kết quả của top `tt_um_eee703128_24100665`, không phải của core
+`j04_display_core`. Flow dùng generic fallback SDC vì chưa khai báo constraint riêng; kết quả
+không được diễn giải thành sign-off, tape-out, chế tạo hoặc kiểm tra trên silicon.
 
 ## Giới hạn
 

@@ -22,6 +22,13 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: rtl2gds-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   # ---- SUA BA DONG NAY CHO KHOP DE CUA MINH -----------------------
   MA_DE: J04
@@ -33,6 +40,7 @@ jobs:
   mo-phong:
     name: 1 - Mo phong RTL (Icarus Verilog)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -48,7 +56,8 @@ jobs:
 
       - name: Bien dich va chay testbench
         run: |
-          iverilog -g2012 -o sim.vvp rtl/*.sv tb/*.sv
+          iverilog -g2012 -s tb -o sim.vvp rtl/project.sv tb/tb.sv
+          set -o pipefail
           vvp sim.vvp | tee simulation.log
 
       - name: Kiem log - phai co PASS va khong duoc co loi
@@ -69,6 +78,7 @@ jobs:
         if: always()
         with:
           name: mo-phong-${{ env.MA_DE }}
+          retention-days: 14
           path: |
             simulation.log
             tool_versions.txt
@@ -78,6 +88,7 @@ jobs:
   rtl2gds:
     name: 2 - RTL-to-GDSII (LibreLane + sky130A)
     runs-on: ubuntu-latest
+    timeout-minutes: 180
     needs: mo-phong
     steps:
       - uses: actions/checkout@v4
@@ -101,13 +112,12 @@ jobs:
 
       - name: Kiem SAN PHAM, khong chi kiem ma thoat
         run: |
-          # Ma thoat 0 chi noi "tien trinh ket thuc binh thuong". No KHONG
-          # noi "da ra san pham". Phai kiem san pham that.
-          GDS=$(find . -name "*.gds" | head -1)
-          MJ=$(find . -name "metrics.json" | head -1)
-          if [ -z "$GDS" ]; then echo "::error::Khong sinh duoc file GDS"; exit 1; fi
-          if [ -z "$MJ" ];  then echo "::error::Khong co metrics.json";   exit 1; fi
-          echo "GDS: $GDS"
+          # Require final streamout and final metrics, not intermediate GDS files.
+          GDS=$(find . -type f -path "*/runs/*/final/gds/*.gds" -print -quit)
+          MJ=$(find . -type f -path "*/runs/*/final/metrics.json" -print -quit)
+          if [ -z "$GDS" ]; then echo "::error::Khong sinh duoc final GDS"; exit 1; fi
+          if [ -z "$MJ" ];  then echo "::error::Khong co final metrics.json"; exit 1; fi
+          echo "Final GDS: $GDS"
           echo "--- Chi so chinh, chep vao bao cao ---"
           python3 .github/doc_metrics.py "$MJ"
 
@@ -116,6 +126,7 @@ jobs:
         if: always()
         with:
           name: rtl2gds-${{ env.MA_DE }}
+          retention-days: 14
           path: |
             **/runs/**/final/**
             **/runs/**/*.log
