@@ -94,7 +94,7 @@ module tb;
         // The first byte is staged; it must not partially update the display.
         load_pair(8'h12);
         repeat (20) @(negedge clk);
-        if (uo_out[6:0] !== 7'b0000001) begin
+        if (uo_out[6:0] !== 7'b1111111) begin
             failures = failures + 1;
             $display("FAIL: display changed before the second pair arrived");
         end
@@ -105,6 +105,22 @@ module tb;
         expect_digit(4'b1101, 7'b0000110); // digit 1 = 3
         expect_digit(4'b1011, 7'b0010010); // digit 2 = 2
         expect_digit(4'b0111, 7'b1001111); // digit 3 = 1
+
+        // Leading zeroes are blank, but the units digit remains visible.
+        load_pair(8'h00);
+        load_pair(8'h05);
+        expect_digit(4'b0111, 7'b1111111); // digit 3 blank
+        expect_digit(4'b1011, 7'b1111111); // digit 2 blank
+        expect_digit(4'b1101, 7'b1111111); // digit 1 blank
+        expect_digit(4'b1110, 7'b0100100); // digit 0 = 5
+
+        // Boundary: zero is displayed as 0000, not as a blank frame.
+        load_pair(8'h00);
+        load_pair(8'h00);
+        expect_digit(4'b0111, 7'b1111111); // leading zero blank
+        expect_digit(4'b1011, 7'b1111111);
+        expect_digit(4'b1101, 7'b1111111);
+        expect_digit(4'b1110, 7'b0000001); // units zero remains visible
 
         // A BCD nibble outside 0..9 is blank, not an arbitrary glyph.
         load_pair(8'hA1);
@@ -132,7 +148,7 @@ module tb;
         end
 
         if (failures == 0)
-            $display("PASS: reset, two-pair loading, scan/decode, invalid BCD, brightness");
+            $display("PASS: reset, frame loading, scan/decode, leading-zero blanking, invalid BCD, brightness");
         else
             $display("FAIL: %0d test failure(s)", failures);
         $finish;

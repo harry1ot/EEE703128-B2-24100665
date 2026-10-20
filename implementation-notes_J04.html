@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J04 — Bộ điều khiển bốn LED 7 đoạn theo phương pháp quét đa hợp · Ghi chú thực hiện</title>
+<style>
+:root{
+  --bg:#ffffff; --fg:#1a1d21; --muted:#5c6570; --line:#e3e7eb;
+  --accent:#1f5fa9; --accent-soft:#eef4fb; --code-bg:#f5f7f9;
+  --ok:#137a4d; --ok-bg:#e8f6ee; --warn:#8a5a00; --warn-bg:#fdf4e2;
+  --bad:#a52020; --bad-bg:#fceded; --open:#7a5ba8; --open-bg:#f3eefa;
+  --maxw:960px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15181c; --fg:#e6e9ec; --muted:#98a2ad; --line:#2a2f36;
+    --accent:#6fa8e0; --accent-soft:#1c2733; --code-bg:#1b1f24;
+    --ok:#5cc08d; --ok-bg:#16291f; --warn:#d8a54a; --warn-bg:#2a2314;
+    --bad:#e88b8b; --bad-bg:#2b1a1a; --open:#b79ad6; --open-bg:#241d2e;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15181c; --fg:#e6e9ec; --muted:#98a2ad; --line:#2a2f36;
+  --accent:#6fa8e0; --accent-soft:#1c2733; --code-bg:#1b1f24;
+  --ok:#5cc08d; --ok-bg:#16291f; --warn:#d8a54a; --warn-bg:#2a2314;
+  --bad:#e88b8b; --bad-bg:#2b1a1a; --open:#b79ad6; --open-bg:#241d2e;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 16px 96px}
+header.doc{
+  border-bottom:1px solid var(--line); margin-bottom:28px; padding:36px 0 22px;
+}
+header.doc .eyebrow{
+  font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--muted); font-weight:600; margin-bottom:10px;
+}
+header.doc h1{font-size:clamp(24px,4.4vw,34px); line-height:1.25; margin:0 0 14px}
+.badges{display:flex; flex-wrap:wrap; gap:7px; margin-top:6px}
+.badge{
+  font-size:12.5px; padding:3px 10px; border-radius:999px;
+  border:1px solid var(--line); color:var(--muted); background:var(--accent-soft);
+  white-space:nowrap;
+}
+.badge.ok{color:var(--ok); background:var(--ok-bg); border-color:transparent}
+.badge.warn{color:var(--warn); background:var(--warn-bg); border-color:transparent}
+.badge.bad{color:var(--bad); background:var(--bad-bg); border-color:transparent}
+.badge.open{color:var(--open); background:var(--open-bg); border-color:transparent}
+nav.toc{
+  border:1px solid var(--line); border-radius:10px; padding:16px 20px;
+  margin:0 0 32px; background:var(--accent-soft);
+}
+nav.toc p{margin:0 0 8px; font-weight:700; font-size:13px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--muted)}
+nav.toc ul{margin:0; padding-left:20px}
+nav.toc li{margin:3px 0}
+nav.toc a{color:var(--fg); text-decoration:none}
+nav.toc a:hover{color:var(--accent); text-decoration:underline}
+nav.toc ul ul{padding-left:18px; font-size:14.5px}
+h2{font-size:22px; margin:40px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--line)}
+h3{font-size:18px; margin:28px 0 8px}
+h4{font-size:16px; margin:22px 0 6px; color:var(--muted)}
+p{margin:12px 0}
+a{color:var(--accent)}
+ul,ol{padding-left:24px}
+li{margin:4px 0}
+code{
+  font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  font-size:.9em; background:var(--code-bg); padding:1.5px 5px; border-radius:4px;
+}
+pre{
+  background:var(--code-bg); border:1px solid var(--line); border-radius:8px;
+  padding:14px 16px; overflow-x:auto; line-height:1.55; font-size:13.5px;
+}
+pre code{background:none; padding:0; font-size:inherit}
+blockquote{
+  margin:16px 0; padding:2px 18px; border-left:3px solid var(--accent);
+  background:var(--accent-soft); border-radius:0 8px 8px 0; color:var(--fg);
+}
+blockquote p{margin:10px 0}
+.tablewrap{overflow-x:auto; margin:16px 0; -webkit-overflow-scrolling:touch}
+table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:420px}
+th,td{border:1px solid var(--line); padding:7px 11px; text-align:left; vertical-align:top}
+th{background:var(--accent-soft); font-weight:650; white-space:nowrap}
+tbody tr:nth-child(even) td{background:color-mix(in srgb, var(--code-bg) 55%, transparent)}
+hr{border:0; border-top:1px solid var(--line); margin:34px 0}
+footer.doc{
+  margin-top:56px; padding-top:18px; border-top:1px solid var(--line);
+  color:var(--muted); font-size:13.5px;
+}
+.themebtn{
+  position:fixed; right:14px; bottom:14px; z-index:10;
+  border:1px solid var(--line); background:var(--bg); color:var(--muted);
+  border-radius:999px; padding:8px 14px; font-size:13px; cursor:pointer;
+}
+.themebtn:hover{color:var(--fg)}
+@media (max-width:640px){
+  .wrap{padding:0 16px 72px}
+  header.doc{padding:26px 0 18px}
+  nav.toc{padding:14px 16px}
+}
+@media print{
+  .themebtn{display:none}
+  nav.toc{break-inside:avoid}
+  pre,table,blockquote{break-inside:avoid}
+  body{font-size:11pt}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc">
+  <div class="eyebrow">RTL2GDS · Đề J04 · Ghi chú thực hiện</div>
+  <h1>J04 — Bộ điều khiển bốn LED 7 đoạn theo phương pháp quét đa hợp · Ghi chú thực hiện</h1>
+  <div class="badges"><span class="badge ">J · Đề khó — nhiều khối, có bắt tay hoặc đường ống</span><span class="badge ">Độ khó: Khó</span><span class="badge ">Loại mạch: Tuần tự</span><span class="badge ok">Mô phỏng: PASS</span><span class="badge ">Tổng hợp: 122 cell · 10 FF</span><span class="badge ">Đường tới hạn: 2,7 ns</span><span class="badge warn">Physical design: CHƯA CHẠY</span></div>
+</header>
+<nav class="toc"><p>Mục lục</p><ul><li><a href="#1-bai-toan-nay-thuc-chat-la-gi">1. Bài toán này thực chất là gì</a></li><li><a href="#2-ban-chat-ky-thuat-co-che-hoat-dong">2. Bản chất kỹ thuật — cơ chế hoạt động</a></li><li><a href="#3-doc-ma-nguon-rtl-lam-gi-tung-dong-quan-trong">3. Đọc mã nguồn: RTL làm gì, từng dòng quan trọng</a></li><ul><li><a href="#3-1-dong-tao-ra-toan-bo-thoi-gian-cua-khoi-dong-82-89">3.1 Dòng tạo ra toàn bộ thời gian của khối (dòng 82–89)</a></li><li><a href="#3-2-dong-bien-bo-dem-thanh-con-tro-khe-quet-dong-17">3.2 Dòng biến bộ đếm thành con trỏ khe quét (dòng 17)</a></li><li><a href="#3-3-chuoi-uu-tien-tat-so-0-dong-42-47">3.3 Chuỗi ưu tiên tắt số 0 (dòng 42–47)</a></li><li><a href="#3-4-pwm-va-cong-chan-dong-76-79">3.4 PWM và cổng chặn (dòng 76–79)</a></li><li><a href="#3-5-mot-dong-phoi-bay-khuyet-tat-kien-truc-dong-18">3.5 Một dòng phơi bày khuyết tật kiến trúc (dòng 18)</a></li></ul><li><a href="#4-vi-sao-chon-kien-truc-nay">4. Vì sao chọn kiến trúc này</a></li><li><a href="#5-cach-thuc-hien-lo-trinh-8-buoc-tu-dac-ta-toi-gdsii">5. Cách thực hiện — lộ trình 8 bước từ đặc tả tới GDSII</a></li><li><a href="#6-so-lieu-that-da-do-duoc-va-cach-doc-chung">6. Số liệu thật đã đo được và cách đọc chúng</a></li><li><a href="#7-tra-loi-cac-cau-hoi-ky-thuat-cua-charter-muc-2">7. Trả lời các câu hỏi kỹ thuật của Charter (mục 2)</a></li><li><a href="#8-tra-loi-cau-phan-tich-rieng-charter-muc-9">8. Trả lời câu phân tích riêng (Charter mục 9)</a></li><li><a href="#9-nhung-cho-sinh-vien-hay-sai-va-cach-phat-hien">9. Những chỗ sinh viên hay sai và cách phát hiện</a></li><li><a href="#10-cau-hoi-mentor-nen-dat-khi-bao-ve">10. Câu hỏi mentor nên đặt khi bảo vệ</a></li><li><a href="#11-gioi-han-da-chung-minh-duoc-gi-chua-chung-minh-duoc-gi">11. Giới hạn: đã chứng minh được gì, chưa chứng minh được gì</a></li><ul><li><a href="#da-chung-minh">Đã chứng minh</a></li><li><a href="#chua-chung-minh">Chưa chứng minh</a></li></ul></ul></nav>
+<main>
+<hr>
+<h2 id="1-bai-toan-nay-thuc-chat-la-gi">1. Bài toán này thực chất là gì</h2>
+<p>Bề ngoài đây là bài "hiện số lên LED". Thực chất nó là bài <strong>đổi tài nguyên không gian lấy
+tài nguyên thời gian</strong>. Bốn LED 7 đoạn nếu lái song song cần 28 đường tín hiệu; một ô Tiny
+Tapeout chỉ có <strong>24 chân cho tất cả mọi thứ</strong>, kể cả đầu vào. Phương án song song không phải
+"tốn hơn" — nó <strong>bất khả thi về vật lý</strong>.</p>
+<p>Quét đa hợp giải bài toán bằng cách chấp nhận rằng <strong>mắt người là một bộ lọc thông thấp</strong>.
+Nếu lần lượt bật từng LED đủ nhanh, võng mạc tích phân bốn ảnh rời rạc thành một ảnh liên
+tục. Ta đã "mượn" khả năng tích phân của mắt để tiết kiệm 19 chân.</p>
+<p>Nhưng việc mượn đó đi kèm <strong>hoá đơn</strong>: mỗi LED chỉ sáng 1/4 thời gian nên tối đi bốn lần;
+và nếu quét chậm quá ngưỡng, ảo giác sụp đổ và người dùng thấy nhấp nháy. Vì vậy J04 không
+phải bài toán logic — nó là bài toán <strong>chọn điểm vận hành</strong> giữa một ràng buộc sinh lý
+(≈60 Hz) và một ràng buộc kỹ thuật (công suất động tỉ lệ với tần số). Charter mục 9 hỏi đúng
+câu đó, và câu trả lời phải là <strong>một con số của chính mình</strong>.</p>
+<p>Lớp thứ ba của bài toán là <strong>ghép ba chức năng lên cùng một trục thời gian</strong>: quét, PWM, và
+tắt số 0 vô nghĩa. Ba chức năng ấy có thể làm rời rạc — và đó là chỗ đa số thiết kế đi sai.</p>
+<h2 id="2-ban-chat-ky-thuat-co-che-hoat-dong">2. Bản chất kỹ thuật — cơ chế hoạt động</h2>
+<p>Cơ chế cốt lõi của J04 nằm ở <strong>một dòng khai báo</strong>: <code>logic [9:0] phase;</code>.</p>
+<p>Không phải "một bộ đếm quét 2 bit và một bộ đếm PWM 8 bit". Là <strong>một</strong> bộ đếm 10 bit, rồi
+<strong>cắt</strong> nó ra:</p>
+<pre><code>      phase[9]  phase[8] │ phase[7] ... phase[0]
+      └────┬─────────────┘ └────────┬──────────┘
+        S = khe quet          Q = pha PWM
+</code></pre>
+<p>Điều này tạo ra một bất biến <strong>không thể phá vỡ bằng lỗi lập trình</strong>: <code>S</code> chỉ đổi khi <code>Q</code>
+tràn từ 255 về 0. Nói cách khác, <strong>mỗi khe quét chứa đúng một chu kỳ PWM trọn vẹn</strong>, và điều
+đó đúng theo <strong>cấu trúc bit</strong>, không phải theo sự cẩn thận của người viết mã.</p>
+<p>Đây chính là rủi ro mà Charter mục 10 cảnh báo: <em>"Hai bộ đếm chạy không đồng bộ với nhau →
+độ sáng nhấp nháy không đều."</em> Với hai bộ đếm riêng, nếu chu kỳ quét không chia hết cho chu
+kỳ PWM, khe 0 có thể nhận đoạn <code>Q = 0…255</code> còn khe 1 nhận <code>Q = 137…255, 0…136</code> — bốn LED
+nhận bốn duty khác nhau và "thở" chậm theo nhịp phách (beat frequency). Bug này <strong>rất khó
+thấy trên waveform ngắn</strong> vì nó chỉ lộ sau hàng nghìn chu kỳ.</p>
+<p>Cơ chế thứ hai đáng nói là <strong>chuỗi phụ thuộc của tính năng tắt số 0 đầu</strong>. Ba điều kiện:</p>
+<pre><code>  tat_khe3 = (d3 == 0)
+  tat_khe2 = (d3 == 0) ∧ (d2 == 0)
+  tat_khe1 = (d3 == 0) ∧ (d2 == 0) ∧ (d1 == 0)
+</code></pre>
+<p>Chúng <strong>lồng nhau</strong>. Kết quả <code>d3 == 0</code> phải sẵn sàng <strong>trước</strong> khi biết chữ số nào được chọn,
+và nó chi phối <strong>cả ba</strong> khe trên. Vì vậy cổng tính <code>d3 == 0</code> không thể chạy song song với
+đường chọn chữ số — nó nằm <strong>nối tiếp phía trước</strong>. STA xác nhận chính xác điều này: cổng đầu
+tiên trên đường tới hạn là <code>_138_/A (nor4_1)</code> với fanout 6, tốn <strong>0,57 ns trên tổng 1,70 ns
+logic</strong> — tức <strong>33,5 %</strong> đường tới hạn cho một phép so sánh với 0.</p>
+<p>Đây mới là nút thắt thật của J04. <strong>Không phải</strong> bộ giải mã 7 đoạn (bảng tra 10 mục, phẳng),
+<strong>không phải</strong> bộ so sánh PWM 8 bit (ABC ánh xạ thành cây, và nó chạy <strong>song song</strong> với đường
+chọn chữ số rồi mới hợp lưu ở cổng AND cuối), và <strong>không phải</strong> bộ đếm 10 bit (reg→reg chỉ
+1,48 ns).</p>
+<h2 id="3-doc-ma-nguon-rtl-lam-gi-tung-dong-quan-trong">3. Đọc mã nguồn: RTL làm gì, từng dòng quan trọng</h2>
+<h3 id="3-1-dong-tao-ra-toan-bo-thoi-gian-cua-khoi-dong-82-89">3.1 Dòng tạo ra toàn bộ thời gian của khối (dòng 82–89)</h3>
+<pre><code class="language-systemverilog">    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n)          phase &lt;= 10'd0;
+        else if (!enable)    phase &lt;= 10'd0;
+        else                 phase &lt;= phase + 10'd1;
+    end
+</code></pre>
+<p>Ba điểm phải nhận ra. <strong>Một:</strong> reset là <strong>bất đồng bộ</strong> (<code>negedge rst_n</code> trong danh sách nhạy)
+— nên STA sinh <code>recovery/removal check</code>, và đó là lý do báo cáo có nhóm <code>Path Group:
+asynchronous</code>. <strong>Hai:</strong> <code>enable = 0</code> không "tạm dừng" mà <strong>về 0</strong> — thiết kế chọn khởi động
+lại khung thay vì tiếp tục, tránh tình trạng một LED bị kẹt sáng. <strong>Ba:</strong> không có nhánh
+<code>else</code> nào bỏ trống ⟹ không sinh latch; netlist xác nhận 0 cell <code>dlatch</code>.</p>
+<h3 id="3-2-dong-bien-bo-dem-thanh-con-tro-khe-quet-dong-17">3.2 Dòng biến bộ đếm thành con trỏ khe quét (dòng 17)</h3>
+<pre><code class="language-systemverilog">    assign digit_sel = phase[9:8];
+</code></pre>
+<p>Một dòng, <strong>0 cell logic</strong>. Yosys thậm chí đổi tên hai flip-flop cao thành <code>digit_sel[0]</code> và
+<code>digit_sel[1]</code>, nên <code>synth_stat.txt</code> không còn net nào tên <code>phase[8]</code>/<code>phase[9]</code>. Sinh viên
+hay hoảng "mất 2 FF" — chúng chỉ bị đổi tên.</p>
+<h3 id="3-3-chuoi-uu-tien-tat-so-0-dong-42-47">3.3 Chuỗi ưu tiên tắt số 0 (dòng 42–47)</h3>
+<pre><code class="language-systemverilog">            else case(i)
+                2'd3: selected_with_blank = (d3==0) ? 4'hF : d3;
+                2'd2: selected_with_blank = (d3==0 &amp;&amp; d2==0) ? 4'hF : d2;
+                2'd1: selected_with_blank = (d3==0 &amp;&amp; d2==0 &amp;&amp; d1==0) ? 4'hF : d1;
+                default: selected_with_blank = d0;
+            endcase
+</code></pre>
+<p><code>default</code> bắt <code>i == 2'd0</code> và <strong>không có điều kiện tắt</strong> — chữ số hàng đơn vị <strong>luôn hiện</strong>.
+Đây là đặc tả đúng: giá trị 0 phải đọc được là <code>"   0"</code> chứ không phải màn hình trống.
+<code>reference_model.py::test_0000</code> kiểm chính xác tính chất này.</p>
+<p>Giá trị canh gác <code>4'hF</code> là một <strong>thủ thuật mã hoá</strong> đáng học: thay vì thêm một tín hiệu
+<code>blank_valid</code> riêng, nó mượn một mã nằm ngoài miền BCD. Chi phí bằng 0 vì <code>decode7</code> vốn đã
+trả <code>7'b0000000</code> cho mọi mã ≥ 10 (nhánh <code>default</code> dòng 63).</p>
+<h3 id="3-4-pwm-va-cong-chan-dong-76-79">3.4 PWM và cổng chặn (dòng 76–79)</h3>
+<pre><code class="language-systemverilog">        if (display_active &amp;&amp; (phase[7:0] &lt; brightness))
+            seg = seg_raw;
+        else
+            seg = 7'b0000000;
+</code></pre>
+<p>Phép so sánh <strong><code>&lt;</code> chứ không <code>&lt;=</code></strong> quyết định miền duty là <code>0 … 255/256</code>, <strong>không bao giờ
+đạt 100 %</strong>. Với <code>brightness = 255</code>, chu kỳ <code>Q = 255</code> vẫn tắt. Đây là đánh đổi cổ điển của
+PWM dựa trên so sánh, và <code>reference_model.py::test_brightness</code> khẳng định đúng nó:
+<code>assert not pwm(255,255)</code>.</p>
+<h3 id="3-5-mot-dong-phoi-bay-khuyet-tat-kien-truc-dong-18">3.5 Một dòng phơi bày khuyết tật kiến trúc (dòng 18)</h3>
+<pre><code class="language-systemverilog">    assign display_active = enable &amp;&amp; (brightness != 8'h00);
+</code></pre>
+<p><code>brightness == 0</code> được xử lý <strong>ngoài</strong> bộ so sánh PWM, qua một đường riêng. Nếu chỉ dựa vào
+<code>Q &lt; brightness</code> thì <code>brightness = 0</code> cũng cho duty 0 — vậy vì sao cần dòng này? Vì
+<code>display_active</code> còn là <strong>tín hiệu ra</strong>: tầng ngoài dùng nó để tắt driver LED và tiết kiệm
+điện. Nhưng nó là <strong>tổ hợp thuần, không đăng ký</strong> ⟹ glitch trên <code>brightness</code> truyền thẳng ra
+chân. Với LED vô hại; với logic tầng ngoài thì không.</p>
+<h2 id="4-vi-sao-chon-kien-truc-nay">4. Vì sao chọn kiến trúc này</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Quyết định</th>
+<th>Lý do</th>
+<th>Có đúng không</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Quét đa hợp</td>
+<td>24 chân là ràng buộc cứng; phương án song song cần 28 chân <strong>chỉ cho đầu ra</strong></td>
+<td>✅ bắt buộc</td>
+</tr>
+<tr>
+<td>Một bộ đếm 10 bit</td>
+<td>Đồng pha PWK↔khe <strong>bằng xây dựng</strong>; −6 FF = −150,144 µm²</td>
+<td>✅ xuất sắc</td>
+</tr>
+<tr>
+<td><code>digit_sel</code> 2 bit nhị phân</td>
+<td>Tiết kiệm 2 chân so với one-hot</td>
+<td>⚠️ trái Charter mục 4</td>
+</tr>
+<tr>
+<td><code>bcd_digits</code> không đăng ký</td>
+<td>−400,384 µm² (−43,4 %)</td>
+<td>⚠️ gây xé hình, trái Charter mục 4</td>
+</tr>
+<tr>
+<td>Mã canh gác <code>4'hF</code> cho "tắt"</td>
+<td>Dùng lại nhánh <code>default</code> của <code>decode7</code>, chi phí 0</td>
+<td>✅ tinh tế</td>
+</tr>
+</tbody>
+</table></div>
+<p>Chi tiết và ba kiến trúc thay thế: <code>03_ARCHITECTURE/tradeoff.md</code>.</p>
+<h2 id="5-cach-thuc-hien-lo-trinh-8-buoc-tu-dac-ta-toi-gdsii">5. Cách thực hiện — lộ trình 8 bước từ đặc tả tới GDSII</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th style="text-align: center;">Bước</th>
+<th>Việc</th>
+<th>Trạng thái J04</th>
+<th>Bằng chứng</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">1</td>
+<td>Đọc Charter, lập bảng yêu cầu có truy vết</td>
+<td>✅</td>
+<td><code>01_REQUIREMENT/requirements.md</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">2</td>
+<td>Viết đặc tả hành vi + bất biến (INV-1…10) <strong>trước khi</strong> đọc RTL</td>
+<td>✅</td>
+<td><code>02_SPECIFICATION/functional_spec.md</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">3</td>
+<td>Viết mô hình chuẩn độc lập (Python) và cho nó PASS</td>
+<td>✅ 7/7</td>
+<td><code>python_reference_run.log</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">4</td>
+<td>Viết RTL; đối chiếu ánh xạ chân với Charter mục 4</td>
+<td>⚠️ <strong>lệch</strong></td>
+<td>cảnh báo đầu <code>functional_spec.md</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">5</td>
+<td>Viết testbench <strong>tự kiểm</strong> nối mô hình chuẩn vào RTL</td>
+<td>❌ <strong>chưa có scoreboard</strong></td>
+<td><code>corner_cases.md</code> §0</td>
+</tr>
+<tr>
+<td style="text-align: center;">6</td>
+<td>Tổng hợp (Yosys) và <strong>đọc netlist</strong> để xác minh kiến trúc</td>
+<td>✅</td>
+<td>122 cell · 10 FF · 922,1344 µm²</td>
+</tr>
+<tr>
+<td style="text-align: center;">7</td>
+<td>STA và <strong>lọc theo <code>Path Group</code></strong> để tìm đường tới hạn thật</td>
+<td>✅</td>
+<td><code>sta/summary.txt</code> dòng 2</td>
+</tr>
+<tr>
+<td style="text-align: center;">8</td>
+<td>Place &amp; route, DRC/LVS, GDS</td>
+<td>⬜ chưa chạy</td>
+<td><code>system_diagram.md</code> §5</td>
+</tr>
+</tbody>
+</table></div>
+<p>Điểm gãy của J04 là <strong>bước 5</strong>. Mô hình chuẩn đã có và đã PASS, RTL đã có, nhưng hai thứ đó
+chưa bao giờ gặp nhau.</p>
+<h2 id="6-so-lieu-that-da-do-duoc-va-cach-doc-chung">6. Số liệu thật đã đo được và cách đọc chúng</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Chỉ số</th>
+<th style="text-align: right;">Giá trị</th>
+<th><strong>Chứng minh</strong> gì</th>
+<th><strong>Không</strong> chứng minh gì</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>122 cell</td>
+<td style="text-align: right;"></td>
+<td>RTL tổng hợp được ra standard cell sky130</td>
+<td>Không nói hành vi đúng</td>
+</tr>
+<tr>
+<td>10 flip-flop</td>
+<td style="text-align: right;"></td>
+<td>Có đúng một bộ đếm 10 bit, <strong>không</strong> phải hai bộ đếm</td>
+<td>Không nói bộ đếm đếm đúng</td>
+</tr>
+<tr>
+<td>922,1344 µm²</td>
+<td style="text-align: right;"></td>
+<td>Quy mô khả thi cho 1×1 tile</td>
+<td>Chưa có số sau P&amp;R (routing sẽ làm phình)</td>
+</tr>
+<tr>
+<td>Slack 6,30 ns / arrival 2,70 ns</td>
+<td style="text-align: right;"></td>
+<td>Ở giả định <code>T = 10 ns</code>, đường <code>bcd_digits[12] → seg[3]</code> <strong>còn dư</strong> 6,30 ns</td>
+<td><strong>Không</strong> phải "chạy được ở 100 MHz" — clock lý tưởng, chưa có RC</td>
+</tr>
+<tr>
+<td>WNS 0,00 / TNS 0,00</td>
+<td style="text-align: right;"></td>
+<td>Không có đường nào vi phạm dưới giả định hiện tại</td>
+<td>Không nói gì về các góc PVT khác</td>
+</tr>
+<tr>
+<td>5,52e-05 W</td>
+<td style="text-align: right;"></td>
+<td>Ước lượng ở <code>f_clk</code> ứng với <code>T = 10 ns</code></td>
+<td><strong>Tỉ lệ tuyến tính với <code>f_clk</code></strong> — con số này vô nghĩa nếu không nói kèm tần số</td>
+</tr>
+<tr>
+<td>Tuần tự 78,0 % / tổ hợp 22,0 %</td>
+<td style="text-align: right;"></td>
+<td>Bộ đếm lật <strong>mỗi chu kỳ</strong> nên chiếm đa số công suất</td>
+<td>Trái với tỉ lệ diện tích (FF chỉ 27,1 %) — không mâu thuẫn, xem <code>datapath.md</code> §6</td>
+</tr>
+<tr>
+<td>Mô phỏng RTL "PASS"</td>
+<td style="text-align: right;"></td>
+<td>Chạy 4096 chu kỳ = <strong>4 khung quét</strong>, không treo</td>
+<td>❌ <strong>Không</strong> chứng minh <code>seg</code> đúng — testbench 0 assertion</td>
+</tr>
+<tr>
+<td>Python reference PASS 7/7</td>
+<td style="text-align: right;"></td>
+<td><strong>Đặc tả</strong> tự nhất quán</td>
+<td>❌ Không chứng minh RTL khớp đặc tả</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>Cách kiểm chéo đáng tin nhất trong hồ sơ này: <code>$finish</code> ở <code>t = 40985</code>. Với <code>always #5 clk</code>
+và <code>3 + 4×1024 = 4099</code> cạnh lên, cạnh cuối ở <code>5 + 4098×10 = 40985</code>. ✅ Khớp tuyệt đối ⟹
+testbench thực sự chạy đủ 4 khung.</p>
+</blockquote>
+<h2 id="7-tra-loi-cac-cau-hoi-ky-thuat-cua-charter-muc-2">7. Trả lời các câu hỏi kỹ thuật của Charter (mục 2)</h2>
+<p><strong>Câu 1 — Chu kỳ quét phải nhanh bao nhiêu để mắt không thấy nháy, và đo được trên waveform
+không?</strong></p>
+<p>Ngưỡng thường dùng là <strong>60 Hz mỗi LED</strong>. Vì <code>phase</code> 10 bit, một khung = <strong>1024 chu kỳ clock</strong>,
+nên <code>f_clk ≥ 60 × 1024 = 61 440 Hz</code>. <strong>Đo được trên waveform về nguyên tắc</strong> — chỉ cần đếm
+số chu kỳ giữa hai lần <code>digit_sel</code> trở về <code>00</code>. Nhưng <strong>hồ sơ hiện chưa có bằng chứng</strong> vì
+testbench không gọi <code>$dumpfile</code>/<code>$dumpvars</code> ⟹ không sinh VCD. Cần bổ sung 2 dòng vào testbench
+rồi chạy lại. Bằng chứng gián tiếp hiện có: <code>$finish @ 40985</code> chứng minh đã chạy đúng 4 khung.</p>
+<p><strong>Câu 2 — PWM chỉnh độ sáng lồng vào chu kỳ quét như thế nào: hai bộ đếm hay một?</strong></p>
+<p><strong>Một.</strong> Bằng chứng ở ba mức: (a) RTL chỉ khai báo <code>logic [9:0] phase</code> và không có biến đếm
+nào khác; (b) netlist có <strong>đúng 10</strong> <code>dfrtp_1</code> — hai bộ đếm riêng phải ≥ 16; (c) <code>digit_sel</code>
+được ánh xạ <strong>trực tiếp</strong> lên hai flip-flop cao của chính bộ đếm đó. Hệ quả: <code>S</code> chỉ đổi khi
+<code>Q</code> tràn ⟹ mỗi khe chứa đúng một chu kỳ PWM ⟹ bốn LED có duty giống hệt nhau. Chi phí tiết
+kiệm: <code>6 × 25,024 = 150,144 µm²</code> (16,3 % diện tích khối).</p>
+<p><strong>Câu 3 — Chế độ tắt số 0 vô nghĩa ở đầu tốn bao nhiêu logic?</strong></p>
+<p>Tách được <strong>một phần</strong> bằng số thật: netlist có 5 <code>nor4_1</code>, trong đó <strong>3</strong> dùng cho <code>d3==0</code>,
+<code>d2==0</code>, <code>d1==0</code> (2 cái còn lại dùng cho <code>brightness != 0</code>, vì 8 bit = 2 × NOR4 + 1 hợp).
+Vậy riêng ba bộ dò 0 = <code>3 × 6,256 = 18,768 µm²</code> = <strong>2,0 %</strong> diện tích khối. Phần logic ưu tiên
+và mux đã bị ABC <strong>gộp</strong> vào mux chọn chữ số nên <strong>không tách được chính xác</strong>.</p>
+<p>Chi phí <strong>thời gian</strong> thì đo trực tiếp được và lớn hơn nhiều: <code>nor4_1</code> là cổng đầu tiên trên
+đường tới hạn, tốn <strong>0,57 ns</strong> trên tổng <strong>1,70 ns</strong> logic ⟹ <strong>33,5 %</strong> đường tới hạn.</p>
+<p>⬜ <strong>Để có con số diện tích chính xác:</strong> chạy Yosys lần hai trên một bản RTL có
+<code>blank_leading_zero</code> buộc <code>1'b0</code>, rồi lấy hiệu <code>Chip area</code>. Chưa chạy.</p>
+<h2 id="8-tra-loi-cau-phan-tich-rieng-charter-muc-9">8. Trả lời câu phân tích riêng (Charter mục 9)</h2>
+<blockquote>
+<p><em>"Tính tần số quét thực tế của thiết kế mình từ xung nhịp và bộ chia, đối chiếu với ngưỡng
+~60 Hz mỗi LED, và đưa phép tính vào báo cáo."</em></p>
+</blockquote>
+<p><strong>Bộ chia của thiết kế này, đọc từ RTL:</strong> <code>phase</code> rộng 10 bit; <code>digit_sel = phase[9:8]</code> ⟹ hệ
+số chia tới tần số khung là <code>2^10 = 1024</code>. Mỗi LED sáng <strong>một lần</strong> mỗi khung, nên tần số làm
+tươi mỗi LED <strong>bằng</strong> tần số khung:</p>
+<pre><code>    f_refresh = f_clk / 1024        (Hz moi LED)
+    f_pwm     = f_clk / 256         (Hz)
+    duty      = brightness / 256    (0 … 255/256)
+</code></pre>
+<p><strong>Đối chiếu với ba giá trị <code>f_clk</code> có mặt trong hồ sơ:</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Nguồn của <code>f_clk</code></th>
+<th style="text-align: right;"><code>f_clk</code></th>
+<th style="text-align: right;"><code>f_refresh</code></th>
+<th style="text-align: right;">So với 60 Hz</th>
+<th>Kết luận</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>design.sdc</code> (<code>create_clock -period 10.0</code>)</td>
+<td style="text-align: right;">100 MHz</td>
+<td style="text-align: right;"><strong>97 656,25 Hz</strong></td>
+<td style="text-align: right;"><strong>×1 627,6</strong></td>
+<td>Thừa xa, lãng phí công suất</td>
+</tr>
+<tr>
+<td><code>reference_model.py::test_scan</code> (<code>10_000_000/1024 &gt; 60</code>)</td>
+<td style="text-align: right;">10 MHz</td>
+<td style="text-align: right;"><strong>9 765,63 Hz</strong></td>
+<td style="text-align: right;"><strong>×162,8</strong></td>
+<td>Vẫn thừa ~163 lần</td>
+</tr>
+<tr>
+<td>Điểm vận hành đề xuất</td>
+<td style="text-align: right;"><strong>102,4 kHz</strong></td>
+<td style="text-align: right;"><strong>100,00 Hz</strong></td>
+<td style="text-align: right;">×1,67</td>
+<td>Đủ lề an toàn, rất tiết kiệm</td>
+</tr>
+<tr>
+<td><strong>Cận dưới tuyệt đối</strong></td>
+<td style="text-align: right;"><strong>61,44 kHz</strong></td>
+<td style="text-align: right;"><strong>60,00 Hz</strong></td>
+<td style="text-align: right;">×1,00</td>
+<td>Biên — không nên vận hành ở đây</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Phép tính cận dưới:</strong> <code>f_clk,min = 60 Hz × 1024 = 61 440 Hz = 61,44 kHz</code>.</p>
+<p><strong>Nửa sau của câu hỏi — "đủ thấp để không phí công suất":</strong> công suất động tỉ lệ tuyến tính
+với <code>f_clk</code>. Điểm đo thật duy nhất là <strong>5,52e-05 W tại <code>f_clk</code> ứng với <code>T = 10 ns</code></strong>. Ngoại
+suy tuyến tính (ghi rõ là <strong>ngoại suy</strong>, không phải đo): ở 102,4 kHz công suất động rơi về
+khoảng <strong>5,7e-08 W</strong>, tức <strong>giảm ~977 lần</strong>. Rò không đổi ở <strong>3,53e-10 W</strong>.</p>
+<p><strong>Kết luận định lượng:</strong> giả định 100 MHz trong <code>design.sdc</code> cho tần số quét <strong>thừa 1 628
+lần</strong> so với nhu cầu sinh lý. Điểm vận hành hợp lý cho một đồng hồ đo là <strong>100 kHz – 1 MHz</strong>,
+cho <code>f_refresh</code> 100 Hz – 1 kHz. ⚠️ Nhắc lại: <code>T = 10 ns</code> trong SDC là <strong>giả định phân tích
+khởi điểm</strong>, không phải yêu cầu hệ thống (<code>02_SPECIFICATION/timing.md</code> §3).</p>
+<h2 id="9-nhung-cho-sinh-vien-hay-sai-va-cach-phat-hien">9. Những chỗ sinh viên hay sai và cách phát hiện</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th style="text-align: center;">#</th>
+<th>Sai lầm</th>
+<th>Hậu quả</th>
+<th><strong>Phát hiện bằng bằng chứng nào</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">1</td>
+<td>Dùng <strong>hai</strong> bộ đếm riêng cho quét và PWM</td>
+<td>Bốn LED có độ sáng khác nhau, "thở" theo nhịp phách</td>
+<td>Đếm <code>dfrtp_1</code> trong <code>synth_stat.txt</code>: <strong>&gt; 10 là dấu hiệu</strong>. Trên waveform: đo số chu kỳ <code>seg != 0</code> ở từng khe, bốn giá trị phải bằng nhau</td>
+</tr>
+<tr>
+<td style="text-align: center;">2</td>
+<td>Coi "mô phỏng PASS" là "RTL đúng"</td>
+<td>Giao nộp một thiết kế chưa bao giờ được kiểm</td>
+<td>Mở testbench, đếm số <code>assert</code>/<code>$fatal</code>. J04 hiện có <strong>0</strong></td>
+</tr>
+<tr>
+<td style="text-align: center;">3</td>
+<td>Đọc <code>timing_report_max.txt</code> dòng đầu và tuyên bố đường tới hạn là <code>rst_n → _216_</code></td>
+<td>Kết luận sai hoàn toàn về nút thắt</td>
+<td>Xem cột <code>Path Group</code>. Dòng đầu là <code>asynchronous</code> (recovery), arrival = đúng 1,00 ns = input delay, <strong>0 cổng logic</strong>. Đường thật là dòng 2 của <code>summary.txt</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">4</td>
+<td>Nói "chạy được ở 100 MHz vì slack dương"</td>
+<td>Phát biểu vượt mức</td>
+<td><code>timing.md</code> §3: clock <strong>lý tưởng</strong>, chưa CTS, chưa RC, một góc PVT. Chỉ được nói "dưới giả định T = 10 ns, còn dư 6,30 ns"</td>
+</tr>
+<tr>
+<td style="text-align: center;">5</td>
+<td>Tưởng <code>brightness = 255</code> cho duty 100 %</td>
+<td>Sai 1/256 ở biên</td>
+<td>RTL dùng <code>&lt;</code> không <code>&lt;=</code>. <code>reference_model.py</code>: <code>assert not pwm(255,255)</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">6</td>
+<td>Quên rằng chữ số hàng đơn vị <strong>không</strong> được tắt</td>
+<td>Hiện <code>0</code> thành màn hình trống</td>
+<td><code>test_0000</code> trong mô hình chuẩn; nhánh <code>default</code> dòng 46 của RTL</td>
+</tr>
+<tr>
+<td style="text-align: center;">7</td>
+<td>Tưởng "mất 2 flip-flop" vì netlist không có <code>phase[8]</code>,<code>phase[9]</code></td>
+<td>Kết luận sai là công cụ tối ưu mất bit</td>
+<td>Grep <code>.Q(</code> trong <code>netlist.v</code>: có <code>digit_sel[0]</code>, <code>digit_sel[1]</code> — Yosys <strong>đổi tên</strong>, tổng vẫn 10</td>
+</tr>
+<tr>
+<td style="text-align: center;">8</td>
+<td>Đổi <code>bcd_digits</code> bất cứ lúc nào</td>
+<td>Xé hình giữa khe</td>
+<td><code>seg</code> là tổ hợp thuần; STA có đường <code>bcd_digits[12] → seg[3]</code> <strong>in→out</strong>. Kiểm bằng ca CA-T2</td>
+</tr>
+<tr>
+<td style="text-align: center;">9</td>
+<td>Nói "quét đa hợp tiết kiệm diện tích"</td>
+<td>Sai bản chất</td>
+<td>Nó tiết kiệm <strong>chân</strong>, và <strong>tốn</strong> thời gian (độ sáng 1/4). Diện tích chỉ là hệ quả phụ của việc chỉ cần 1 bộ giải mã</td>
+</tr>
+<tr>
+<td style="text-align: center;">10</td>
+<td>Trả lời Charter mục 9 bằng "quét nhanh hơn 60 Hz là được"</td>
+<td>Bỏ mất nửa sau của câu hỏi</td>
+<td>Phải có bảng số như §8, gồm cả cận trên theo công suất</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="10-cau-hoi-mentor-nen-dat-khi-bao-ve">10. Câu hỏi mentor nên đặt khi bảo vệ</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th style="text-align: center;">#</th>
+<th>Câu hỏi</th>
+<th>Đáp án mong đợi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">1</td>
+<td>Thiết kế của em có mấy bộ đếm? Chứng minh bằng netlist.</td>
+<td>Một. <code>synth_stat.txt</code> ghi đúng <strong>10</strong> <code>dfrtp_1</code> = <code>phase[7:0]</code> + <code>digit_sel[1:0]</code>. Hai bộ đếm riêng phải ≥ 16 FF.</td>
+</tr>
+<tr>
+<td style="text-align: center;">2</td>
+<td>Tần số quét của em là bao nhiêu, và em lấy <code>f_clk</code> ở đâu?</td>
+<td><code>f_clk/1024</code>. <code>f_clk</code> <strong>không</strong> phải số của thiết kế — <code>T = 10 ns</code> trong SDC chỉ là giả định phân tích. Cận dưới thật: 61,44 kHz cho 60 Hz/LED.</td>
+</tr>
+<tr>
+<td style="text-align: center;">3</td>
+<td>Vì sao khe quét không bị lệch pha so với PWM?</td>
+<td>Vì <code>S = phase[9:8]</code> và <code>Q = phase[7:0]</code> <strong>thuộc cùng một thanh ghi</strong>. <code>S</code> chỉ đổi khi <code>Q</code> tràn — đúng theo cấu trúc bit, không cần logic đồng bộ nào.</td>
+</tr>
+<tr>
+<td style="text-align: center;">4</td>
+<td>Đường tới hạn của thiết kế nằm ở đâu, và vì sao?</td>
+<td><code>bcd_digits[12] → seg[3]</code>, arrival 2,70 ns, slack 6,30 ns. Cổng đầu là <code>nor4_1</code> tính <code>d3 == 0</code> — vì kết quả đó chi phối cả ba khe trên nên nằm <strong>nối tiếp phía trước</strong> mux chọn chữ số.</td>
+</tr>
+<tr>
+<td style="text-align: center;">5</td>
+<td>Vì sao <code>rst_n → _216_</code> đứng đầu báo cáo nhưng không phải đường tới hạn?</td>
+<td>Vì nó thuộc <code>Path Group: asynchronous</code> (recovery check), arrival = đúng 1,00 ns input delay và <strong>không đi qua cổng nào</strong>. Thứ tự in không phải thứ tự chậm.</td>
+</tr>
+<tr>
+<td style="text-align: center;">6</td>
+<td>"Mô phỏng PASS" của em chứng minh điều gì?</td>
+<td>Chỉ chứng minh chạy 4096 chu kỳ (4 khung) không treo. Testbench <strong>không có assertion nào</strong>; mô hình chuẩn Python chưa được nối vào RTL. Đây là khoảng trống lớn nhất.</td>
+</tr>
+<tr>
+<td style="text-align: center;">7</td>
+<td><code>brightness = 255</code> cho duty bao nhiêu?</td>
+<td>255/256 ≈ 99,61 %, <strong>không</strong> phải 100 %, vì so sánh dùng <code>&lt;</code>.</td>
+</tr>
+<tr>
+<td style="text-align: center;">8</td>
+<td>Nếu <code>bcd_digits</code> là <code>16'h0000</code> và bật chế độ tắt, màn hình hiện gì?</td>
+<td><code>"   0"</code> — ba chữ số đầu tắt, hàng đơn vị <strong>luôn hiện</strong>. Nhánh <code>default</code> của <code>selected_with_blank</code> không có điều kiện tắt.</td>
+</tr>
+<tr>
+<td style="text-align: center;">9</td>
+<td>Tính năng tắt số 0 đầu tốn bao nhiêu?</td>
+<td>Diện tích: <strong>≥ 18,768 µm²</strong> (3 × <code>nor4_1</code>) = 2,0 % — phần còn lại đã bị ABC gộp, cần chạy tổng hợp lần hai để tách. Thời gian: <strong>33,5 %</strong> đường tới hạn.</td>
+</tr>
+<tr>
+<td style="text-align: center;">10</td>
+<td>Thiết kế em có 122 cell, Charter ước ~400–560. Vì sao?</td>
+<td>Vì RTL <strong>thiếu</strong> thanh ghi nạp chữ số (−16 FF) và cơ chế nạp hai nhịp mà Charter mục 4 yêu cầu, đồng thời gộp hai bộ đếm (−6 FF). Số nhỏ là dấu hiệu <strong>thiếu chức năng</strong>, không phải làm giỏi.</td>
+</tr>
+<tr>
+<td style="text-align: center;">11</td>
+<td>Nếu một bit của <code>phase</code> bị lật do nhiễu thì sao?</td>
+<td>Tự phục hồi. Không gian mã 10 bit <strong>phủ kín</strong> 1024 trạng thái nên không có trạng thái chết. Triệu chứng: một khung hiển thị sai thứ tự rồi tự đúng lại.</td>
+</tr>
+<tr>
+<td style="text-align: center;">12</td>
+<td>Muốn PWM 10 bit thì phải đổi gì?</td>
+<td><code>phase</code> lên 12 bit ⟹ +2 FF, và tần số khung <strong>giảm 4 lần</strong> ⟹ <code>f_clk,min</code> tăng lên 245,76 kHz. Đây là cái giá của việc gộp hai bộ đếm.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="11-gioi-han-da-chung-minh-duoc-gi-chua-chung-minh-duoc-gi">11. Giới hạn: đã chứng minh được gì, chưa chứng minh được gì</h2>
+<h3 id="da-chung-minh">Đã chứng minh</h3>
+<ul>
+<li>RTL <strong>tổng hợp được</strong> ra 122 standard cell sky130, 922,1344 µm² (<code>synth_stat.txt</code>).</li>
+<li>Thiết kế dùng <strong>đúng một</strong> bộ đếm 10 bit — xác minh bằng số flip-flop và tên net trong netlist.</li>
+<li>Dưới giả định <code>T = 10 ns</code>, IO delay 1 ns, clock <strong>lý tưởng</strong>, thư viện <code>tt_025C_1v80</code>: WNS
+  và TNS bằng 0; đường dữ liệu xấu nhất còn dư <strong>6,30 ns</strong>.</li>
+<li>Đường tới hạn dữ liệu đi qua <strong>bộ dò <code>d3 == 0</code></strong>, không phải bộ giải mã hay bộ so sánh PWM.</li>
+<li>Đặc tả (mô hình chuẩn Python) <strong>tự nhất quán</strong>: 7/7 test PASS.</li>
+<li>Testbench chạy đúng <strong>4 khung quét đầy đủ</strong> — xác minh bằng <code>$finish @ 40985</code>.</li>
+</ul>
+<h3 id="chua-chung-minh">Chưa chứng minh</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Điều chưa chứng minh</th>
+<th>Cần gì để chứng minh</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RTL khớp mô hình chuẩn</strong></td>
+<td>Viết scoreboard nối <code>reference_model.py</code> vào testbench. <strong>Đây là việc quan trọng nhất còn thiếu.</strong></td>
+</tr>
+<tr>
+<td>Chu kỳ quét quan sát được trên waveform</td>
+<td>Thêm <code>$dumpfile</code>/<code>$dumpvars</code> và chạy lại → sinh VCD</td>
+</tr>
+<tr>
+<td>Duty PWM đúng bằng <code>brightness</code></td>
+<td>Ca CA-T6 (đếm chu kỳ sáng trong một khe)</td>
+</tr>
+<tr>
+<td>Hành vi khi <code>brightness = 0</code></td>
+<td>Ca CA-T1 — giá trị này <strong>chưa bao giờ</strong> được lái vào RTL</td>
+</tr>
+<tr>
+<td>Hành vi với nibble ngoài miền BCD</td>
+<td>Ca CA-T4</td>
+</tr>
+<tr>
+<td>Netlist tương đương RTL</td>
+<td>Mô phỏng gate-level (L4) — <code>⬜ chưa chạy</code></td>
+</tr>
+<tr>
+<td>Độ trễ lan truyền thật</td>
+<td>Mô phỏng post-layout có SDF (L5) — <code>⬜ chưa chạy</code></td>
+</tr>
+<tr>
+<td>Tần số hoạt động thật</td>
+<td>STA <strong>sau routing</strong>, nhiều góc PVT — chưa có RC</td>
+</tr>
+<tr>
+<td>Diện tích thật</td>
+<td>Sau place &amp; route — con số 922,1344 µm² là <strong>sau tổng hợp logic</strong>, chưa có dây</td>
+</tr>
+<tr>
+<td>Chi phí chính xác của "tắt số 0 đầu"</td>
+<td>Chạy Yosys lần hai với <code>blank_leading_zero = 1'b0</code></td>
+</tr>
+<tr>
+<td><strong>Đúng Charter mục 4</strong></td>
+<td>❌ <strong>CHƯA THOẢ</strong> — ba trên bốn ánh xạ chân lệch; cần giảng viên duyệt hướng xử lý (xem cảnh báo đầu <code>functional_spec.md</code>)</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<p><em>Phiên bản: v1.0 · Ngày: 2026-09-24</em></p>
+</main>
+<footer class="doc">
+  Tài liệu sinh từ <code>implementation-notes_J04.md</code>.
+  Mọi số liệu đều kèm công cụ, phiên bản và lệnh tái lập trong
+  <code>07_TRACEABILITY/evidence_index.md</code>.
+</footer>
+</div>
+<script>
+(function(){
+  var b=document.createElement('button');
+  b.className='themebtn'; b.type='button';
+  function lbl(){var t=document.documentElement.getAttribute('data-theme');
+    return t==='dark'?'Nen sang':(t==='light'?'Nen toi':'Doi nen');}
+  b.textContent=lbl();
+  try{var s=localStorage.getItem('rtl2gds-theme'); if(s)document.documentElement.setAttribute('data-theme',s);}catch(e){}
+  b.textContent=lbl();
+  b.addEventListener('click',function(){
+    var cur=document.documentElement.getAttribute('data-theme');
+    var mq=window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next=cur?(cur==='dark'?'light':'dark'):(mq?'light':'dark');
+    document.documentElement.setAttribute('data-theme',next);
+    try{localStorage.setItem('rtl2gds-theme',next);}catch(e){}
+    b.textContent=lbl();
+  });
+  document.body.appendChild(b);
+})();
+</script>
+</body>
+</html>

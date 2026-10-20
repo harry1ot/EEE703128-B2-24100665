@@ -36,6 +36,7 @@ module tt_um_eee703128_24100665 #(
     reg [2:0] pwm_counter;
 
     reg [3:0] selected_digit;
+    reg       selected_blank;
     reg [6:0] segments_n;
     reg [3:0] digit_enable_n;
 
@@ -83,27 +84,46 @@ module tt_um_eee703128_24100665 #(
     end
 
     always @* begin
+        selected_blank = 1'b0;
         case (scan_index)
-            2'd0: selected_digit = digit0;
-            2'd1: selected_digit = digit1;
-            2'd2: selected_digit = digit2;
-            default: selected_digit = digit3;
+            2'd0: begin
+                selected_digit = digit0;
+            end
+            2'd1: begin
+                selected_digit = digit1;
+                selected_blank = (digit3 == 4'd0) &&
+                                 (digit2 == 4'd0) &&
+                                 (digit1 == 4'd0);
+            end
+            2'd2: begin
+                selected_digit = digit2;
+                selected_blank = (digit3 == 4'd0) &&
+                                 (digit2 == 4'd0);
+            end
+            default: begin
+                selected_digit = digit3;
+                selected_blank = (digit3 == 4'd0);
+            end
         endcase
 
         // Active-low segments, ordered a,b,c,d,e,f,g. Invalid BCD is blank.
-        case (selected_digit)
-            4'd0:    segments_n = 7'b0000001;
-            4'd1:    segments_n = 7'b1001111;
-            4'd2:    segments_n = 7'b0010010;
-            4'd3:    segments_n = 7'b0000110;
-            4'd4:    segments_n = 7'b1001100;
-            4'd5:    segments_n = 7'b0100100;
-            4'd6:    segments_n = 7'b0100000;
-            4'd7:    segments_n = 7'b0001111;
-            4'd8:    segments_n = 7'b0000000;
-            4'd9:    segments_n = 7'b0000100;
-            default: segments_n = 7'b1111111;
-        endcase
+        if (selected_blank) begin
+            segments_n = 7'b1111111;
+        end else begin
+            case (selected_digit)
+                4'd0:    segments_n = 7'b0000001;
+                4'd1:    segments_n = 7'b1001111;
+                4'd2:    segments_n = 7'b0010010;
+                4'd3:    segments_n = 7'b0000110;
+                4'd4:    segments_n = 7'b1001100;
+                4'd5:    segments_n = 7'b0100100;
+                4'd6:    segments_n = 7'b0100000;
+                4'd7:    segments_n = 7'b0001111;
+                4'd8:    segments_n = 7'b0000000;
+                4'd9:    segments_n = 7'b0000100;
+                default: segments_n = 7'b1111111;
+            endcase
+        end
 
         // Active-low digit selects. uio_out[4] selects digit 0.
         digit_enable_n = ~(4'b0001 << scan_index);
